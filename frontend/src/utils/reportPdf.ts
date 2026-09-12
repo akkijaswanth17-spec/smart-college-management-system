@@ -4,7 +4,7 @@
 import type { jsPDF as JsPDF } from "jspdf";
 import logoUrl from "../assets/college-logo.jpeg";
 import { COLLEGE_NAME } from "../constants";
-import { StudentDetailsReportData, StudentMarksReportData, FacultyDetailsReportData } from "../types";
+import { StudentDetailsReportData, StudentMarksReportData, FacultyDetailsReportData, MarksColumns } from "../types";
 import { shortAcademicYear } from "./format";
 
 const NAVY = "#071a33";
@@ -141,7 +141,11 @@ export async function generateStudentDetailsPdf(data: StudentDetailsReportData, 
   pdf.save(`Student_Details_${data.studentId}.pdf`);
 }
 
-export async function generateStudentMarksPdf(data: StudentMarksReportData, generatedBy: string) {
+export async function generateStudentMarksPdf(
+  data: StudentMarksReportData,
+  generatedBy: string,
+  columns: MarksColumns = { mid1: true, mid2: true, semester: true }
+) {
   const [{ jsPDF }, { default: autoTable }] = await Promise.all([import("jspdf"), import("jspdf-autotable")]);
   const pdf = new jsPDF({ unit: "pt", format: "a4" });
   const academicYear = data.subjects[0] ? shortAcademicYear(data.subjects[0].academicYear) : undefined;
@@ -165,12 +169,19 @@ export async function generateStudentMarksPdf(data: StudentMarksReportData, gene
     autoTable(pdf, {
       startY: y,
       margin: { left: MARGIN, right: MARGIN },
-      head: [["Subject", "Mid 1", "Mid 2", "Semester"]],
+      head: [
+        [
+          "Subject",
+          ...(columns.mid1 ? ["Mid 1"] : []),
+          ...(columns.mid2 ? ["Mid 2"] : []),
+          ...(columns.semester ? ["Semester"] : []),
+        ],
+      ],
       body: data.subjects.map((s) => [
         s.subject,
-        s.mid1 ?? "—",
-        s.mid2 ?? "—",
-        s.semester ?? "—",
+        ...(columns.mid1 ? [s.mid1 ?? "—"] : []),
+        ...(columns.mid2 ? [s.mid2 ?? "—"] : []),
+        ...(columns.semester ? [s.semester ?? "—"] : []),
       ]),
       headStyles: { fillColor: [7, 26, 51], textColor: 255, fontStyle: "bold" },
       styles: { fontSize: 9, textColor: [7, 26, 51] },

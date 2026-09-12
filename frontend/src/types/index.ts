@@ -312,6 +312,12 @@ export interface StudentMarksReportSubject {
   academicYear: string;
 }
 
+export interface MarksColumns {
+  mid1: boolean;
+  mid2: boolean;
+  semester: boolean;
+}
+
 export interface StudentMarksReportData {
   studentId: string;
   fullName: string;

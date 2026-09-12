@@ -11,9 +11,53 @@ import { useAuth } from "../../context/AuthContext";
 import { getDisplayName } from "../../utils/displayName";
 import { getErrorMessage } from "../../services/api";
 import { shortAcademicYear } from "../../utils/format";
-import { StudentMarksReportData } from "../../types";
+import { StudentMarksReportData, MarksColumns } from "../../types";
 
-function MarksBody({ data }: { data: StudentMarksReportData }) {
+const COLUMN_OPTIONS: { key: keyof MarksColumns; label: string }[] = [
+  { key: "mid1", label: "Mid 1" },
+  { key: "mid2", label: "Mid 2" },
+  { key: "semester", label: "Semester" },
+];
+
+function ColumnPicker({ columns, onChange }: { columns: MarksColumns; onChange: (c: MarksColumns) => void }) {
+  const allSelected = COLUMN_OPTIONS.every((o) => columns[o.key]);
+
+  function toggle(key: keyof MarksColumns) {
+    const next = { ...columns, [key]: !columns[key] };
+    if (COLUMN_OPTIONS.every((o) => !next[o.key])) return; // keep at least one column
+    onChange(next);
+  }
+
+  return (
+    <div className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2.5">
+      <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Export Columns</span>
+      {COLUMN_OPTIONS.map((opt) => (
+        <button
+          key={opt.key}
+          type="button"
+          onClick={() => toggle(opt.key)}
+          className={`rounded-full border px-3 py-1 text-xs font-semibold transition-colors ${
+            columns[opt.key]
+              ? "border-brand-800 bg-brand-800 text-white"
+              : "border-slate-300 bg-white text-slate-500 hover:border-slate-400"
+          }`}
+        >
+          {opt.label}
+        </button>
+      ))}
+      <button
+        type="button"
+        onClick={() => onChange({ mid1: true, mid2: true, semester: true })}
+        disabled={allSelected}
+        className="ml-auto text-xs font-semibold text-brand-700 hover:underline disabled:pointer-events-none disabled:text-slate-300"
+      >
+        All
+      </button>
+    </div>
+  );
+}
+
+function MarksBody({ data, columns }: { data: StudentMarksReportData; columns: MarksColumns }) {
   return (
     <div className="space-y-4">
       <dl className="grid grid-cols-1 gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
@@ -41,18 +85,18 @@ function MarksBody({ data }: { data: StudentMarksReportData }) {
             <thead className="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
               <tr>
                 <th className="px-3 py-2">Subject</th>
-                <th className="px-3 py-2">Mid 1</th>
-                <th className="px-3 py-2">Mid 2</th>
-                <th className="px-3 py-2">Semester</th>
+                {columns.mid1 && <th className="px-3 py-2">Mid 1</th>}
+                {columns.mid2 && <th className="px-3 py-2">Mid 2</th>}
+                {columns.semester && <th className="px-3 py-2">Semester</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {data.subjects.map((s) => (
                 <tr key={s.code}>
                   <td className="px-3 py-2 font-medium text-brand-950">{s.subject}</td>
-                  <td className="px-3 py-2">{s.mid1 ?? "—"}</td>
-                  <td className="px-3 py-2">{s.mid2 ?? "—"}</td>
-                  <td className="px-3 py-2">{s.semester ?? "—"}</td>
+                  {columns.mid1 && <td className="px-3 py-2">{s.mid1 ?? "—"}</td>}
+                  {columns.mid2 && <td className="px-3 py-2">{s.mid2 ?? "—"}</td>}
+                  {columns.semester && <td className="px-3 py-2">{s.semester ?? "—"}</td>}
                 </tr>
               ))}
             </tbody>
@@ -70,6 +114,7 @@ export function StudentMarksReport() {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [autoPrint, setAutoPrint] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [columns, setColumns] = useState<MarksColumns>({ mid1: true, mid2: true, semester: true });
   const toast = useToast();
   const { user } = useAuth();
   const generatedBy = getDisplayName(user);
@@ -93,7 +138,7 @@ export function StudentMarksReport() {
     if (!data) return;
     setDownloading(true);
     try {
-      await generateStudentMarksPdf(data, generatedBy);
+      await generateStudentMarksPdf(data, generatedBy, columns);
       toast.success("Report generated successfully.");
     } catch {
       toast.error("Unable to generate the report. Please try again.");
@@ -119,7 +164,8 @@ export function StudentMarksReport() {
           <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-emerald-700">
             <CheckCircle2 className="h-3.5 w-3.5" /> Record found
           </p>
-          <MarksBody data={data} />
+          <ColumnPicker columns={columns} onChange={setColumns} />
+          <MarksBody data={data} columns={columns} />
           <ReportActions
             onPreview={() => {
               setAutoPrint(false);
@@ -146,7 +192,7 @@ export function StudentMarksReport() {
           downloading={downloading}
           autoPrint={autoPrint}
         >
-          <MarksBody data={data} />
+          <MarksBody data={data} columns={columns} />
         </ReportPreview>
       )}
     </div>
