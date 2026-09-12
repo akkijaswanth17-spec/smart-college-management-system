@@ -1,0 +1,42 @@
+import { Router } from "express";
+import authRoutes from "./auth.routes";
+import studentRoutes from "./student.routes";
+import facultyRoutes from "./faculty.routes";
+import noticeRoutes from "./notice.routes";
+import academicUpdateRoutes from "./academicUpdate.routes";
+import lostFoundRoutes from "./lostFound.routes";
+import timetableRoutes from "./timetable.routes";
+import notificationRoutes from "./notification.routes";
+import whatsappRoutes from "./whatsapp.routes";
+import settingsRoutes from "./settings.routes";
+import importRoutes from "./import.routes";
+import auditRoutes from "./audit.routes";
+import adminRoutes from "./admin.routes";
+import metaRoutes from "./meta.routes";
+import pushRoutes from "./push.routes";
+import marksRoutes from "./marks.routes";
+import branchAdminRoutes from "./branchAdmin.routes";
+import reportsRoutes from "./reports.routes";
+
+const router = Router();
+
+router.use("/auth", authRoutes);
+router.use("/students", studentRoutes);
+router.use("/faculty", facultyRoutes);
+router.use("/notices", noticeRoutes);
+router.use("/academic-updates", academicUpdateRoutes);
+router.use("/lost-found", lostFoundRoutes);
+router.use("/timetable", timetableRoutes);
+router.use("/notifications", notificationRoutes);
+router.use("/whatsapp", whatsappRoutes);
+router.use("/settings", settingsRoutes);
+router.use("/import", importRoutes);
+router.use("/audit-logs", auditRoutes);
+router.use("/admin", adminRoutes);
+router.use("/meta", metaRoutes);
+router.use("/push", pushRoutes);
+router.use("/marks", marksRoutes);
+router.use("/branch-admins", branchAdminRoutes);
+router.use("/reports", reportsRoutes);
+
+export default router;

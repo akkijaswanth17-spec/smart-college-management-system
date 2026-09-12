@@ -1,0 +1,144 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Playfair Display", ui-serif, Georgia, serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+
+  /* Warm "paper" neutral scale, replacing Tailwind's default cool slate.
+     Every bg-slate, text-slate and border-slate utility in the app reads
+     from these values, so this one override reskins the whole product. */
+  --color-slate-50: #faf7f0;
+  --color-slate-100: #f4efe3;
+  --color-slate-200: #e7ded0;
+  --color-slate-300: #d6cab8;
+  --color-slate-400: #a89e8c;
+  --color-slate-500: #8b8271;
+  --color-slate-600: #6c6558;
+  --color-slate-700: #524c42;
+  --color-slate-800: #34302a;
+  --color-slate-900: #211e19;
+  --color-slate-950: #14120e;
+
+  /* Primary brand: deep academic Crimson/Maroon */
+  --color-brand-50: #fbebec;
+  --color-brand-100: #f3ccd0;
+  --color-brand-200: #e6a0a8;
+  --color-brand-300: #d5717e;
+  --color-brand-400: #c14956;
+  --color-brand-500: #a32639;
+  --color-brand-600: #8a1f2f; /* primary brand color used throughout */
+  --color-brand-700: #6f1826;
+  --color-brand-800: #56121d;
+  --color-brand-900: #3a0c14;
+  --color-brand-950: #240509;
+
+  /* Accent: Warm Gold — used sparingly against the crimson ground */
+  --color-gold-50: #fff8e8;
+  --color-gold-100: #fdecc0;
+  --color-gold-200: #fbd980;
+  --color-gold-300: #f7c14a;
+  --color-gold-400: #f3a824;
+  --color-gold-500: #e9910f;
+  --color-gold-600: #c4740a;
+
+  /* Supporting slate — cool, for secondary text against ivory/crimson surfaces */
+  --color-ink-slate: #526274;
+  --color-ivory: #f8f6f0;
+  --color-soft-gold: #f7c14a;
+  --color-surface: #f4f7fa;
+  --color-hairline: #dce3ea;
+
+  --color-maroon-500: #b3352a;
+  --color-maroon-600: #942a21;
+
+  --color-forest-500: #2f7d4f;
+  --color-forest-600: #256540;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-slate-50 text-slate-900 antialiased;
+}
+
+::selection {
+  @apply bg-brand-200 text-brand-900;
+}
+
+.container-page {
+  @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+}
+
+/* Cork board texture for the Notice Board page */
+.bg-corkboard {
+  background-color: #b98b5e;
+  background-image:
+    radial-gradient(circle at 15% 20%, rgba(255, 255, 255, 0.07) 0, transparent 3%),
+    radial-gradient(circle at 45% 60%, rgba(0, 0, 0, 0.08) 0, transparent 3%),
+    radial-gradient(circle at 70% 25%, rgba(255, 255, 255, 0.06) 0, transparent 2.5%),
+    radial-gradient(circle at 85% 75%, rgba(0, 0, 0, 0.07) 0, transparent 3%),
+    radial-gradient(circle at 25% 85%, rgba(0, 0, 0, 0.06) 0, transparent 2.5%),
+    radial-gradient(circle at 60% 10%, rgba(0, 0, 0, 0.06) 0, transparent 2.5%),
+    linear-gradient(135deg, #c39567 0%, #a97c4f 100%);
+  background-size:
+    140px 140px,
+    120px 120px,
+    160px 160px,
+    130px 130px,
+    150px 150px,
+    110px 110px,
+    100% 100%;
+}
+
+/* Report printing — isolates #report-print-area so only the official document
+   prints, never the sidebar/navbar/dashboard chrome or the preview's own buttons. */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #report-print-area,
+  #report-print-area * {
+    visibility: visible;
+  }
+  /* The report preview lives inside a Modal, whose card scrolls its own
+     content (max-height + overflow-y-auto) — visibility alone doesn't lift
+     that clipping, so anything below the fold got cut off when printing.
+     Neutralize the modal's positioning/clipping so the full report can lay
+     out at its natural height instead of being confined to the on-screen card. */
+  .modal-overlay {
+    position: static !important;
+    background: none !important;
+    backdrop-filter: none !important;
+    padding: 0 !important;
+  }
+  .modal-card {
+    position: static !important;
+    max-height: none !important;
+    overflow: visible !important;
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+  }
+  #report-print-area {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+  }
+  .no-print {
+    display: none !important;
+  }
+}
