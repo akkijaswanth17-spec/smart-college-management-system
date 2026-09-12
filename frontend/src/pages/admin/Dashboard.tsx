@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { format } from "date-fns";
 import {
   Users,
   GraduationCap,
@@ -15,7 +14,7 @@ import {
 } from "lucide-react";
 import { StatCard } from "../../components/ui/StatCard";
 import { Badge } from "../../components/ui/Badge";
-import { PersonAvatar } from "../../components/ui/Avatar";
+import { DashboardHero } from "../../components/dashboard/DashboardHero";
 import { SkeletonStatGrid, SkeletonList } from "../../components/ui/Skeleton";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { ScheduleStrip } from "../../components/ScheduleStrip";
@@ -72,57 +71,36 @@ export default function AdminDashboard() {
 
   return (
     <div className="space-y-8">
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.45, ease: "easeOut" }}
-        className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-brand-900 via-brand-800 to-brand-700 px-6 py-8 shadow-lg sm:px-10 sm:py-10"
-      >
-        <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-gold-400/10 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-24 left-1/3 h-64 w-64 rounded-full bg-white/5 blur-3xl" />
-
-        <div className="relative flex flex-wrap items-start justify-between gap-6">
-          <div className="flex items-center gap-4">
-            <PersonAvatar tone="maroon" className="h-16 w-16 sm:h-20 sm:w-20" ringed src={user?.avatarUrl} />
-            <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.25em] text-gold-300">Administration Portal</p>
-              <h1 className="mt-1 font-serif text-3xl font-extrabold text-white sm:text-4xl">
-                Welcome, {user?.admin?.fullName ?? "Administrator"}
-              </h1>
-              <p className="mt-2 text-sm text-white/70">College-wide overview and quick statistics.</p>
-            </div>
-          </div>
-          <div className="hidden text-right text-white/80 sm:block">
-            <p className="font-mono text-2xl font-bold tabular-nums text-white">{format(now, "hh:mm:ss a")}</p>
-            <p className="text-xs text-white/60">{format(now, "EEEE, d MMMM yyyy")}</p>
-          </div>
-        </div>
-
-        <div className="relative -mx-6 mt-7 border-t border-dashed border-white/25 pt-5 sm:-mx-10">
-          <span className="absolute -left-3 -top-3 h-6 w-6 rounded-full bg-slate-50" />
-          <span className="absolute -right-3 -top-3 h-6 w-6 rounded-full bg-slate-50" />
-          <div className="flex flex-wrap gap-x-8 gap-y-2 px-6 text-sm text-white/80 sm:px-10">
+      <DashboardHero
+        eyebrow="Administration Portal"
+        title={user?.admin?.fullName ?? "Administrator"}
+        subtitle="College-wide overview and quick statistics."
+        avatarTone="maroon"
+        avatarSrc={user?.avatarUrl}
+        now={now}
+        statusContent={
+          <div className="flex flex-wrap gap-x-8 gap-y-2 text-sm text-slate-600">
             {data ? (
               <>
                 <span>
-                  <b className="font-mono text-white">{data.stats.totalStudents}</b> students
+                  <b className="font-mono text-slate-900">{data.stats.totalStudents}</b> students
                 </span>
                 <span>
-                  <b className="font-mono text-white">{data.stats.totalFaculty}</b> faculty
+                  <b className="font-mono text-slate-900">{data.stats.totalFaculty}</b> faculty
                 </span>
                 <span>
-                  <b className="font-mono text-white">{data.stats.todaysClasses}</b> classes today
+                  <b className="font-mono text-slate-900">{data.stats.todaysClasses}</b> classes today
                 </span>
                 <span>
-                  <b className="font-mono text-white">{data.stats.pendingWhatsAppRequests}</b> pending requests
+                  <b className="font-mono text-slate-900">{data.stats.pendingWhatsAppRequests}</b> pending requests
                 </span>
               </>
             ) : (
-              <span className="text-white/50">Loading college-wide statistics&hellip;</span>
+              <span className="text-slate-400">Loading college-wide statistics&hellip;</span>
             )}
           </div>
-        </div>
-      </motion.div>
+        }
+      />
 
       {loading || !data ? (
         <div className="space-y-8">

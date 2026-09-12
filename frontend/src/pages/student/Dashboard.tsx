@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
 import {
   Megaphone,
   BookOpen,
@@ -17,7 +16,7 @@ import { CardBody } from "../../components/ui/Card";
 import { Badge } from "../../components/ui/Badge";
 import { StatCard } from "../../components/ui/StatCard";
 import { SectionHeader } from "../../components/ui/SectionHeader";
-import { PersonAvatar } from "../../components/ui/Avatar";
+import { DashboardHero, HeroStatusBadge } from "../../components/dashboard/DashboardHero";
 import { SkeletonList, SkeletonStatGrid, SkeletonCardGrid } from "../../components/ui/Skeleton";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { StaggerContainer, StaggerItem } from "../../components/motion/Stagger";
@@ -27,13 +26,13 @@ import { ProgressRing } from "../../components/charts/ProgressRing";
 import { useAuth } from "../../context/AuthContext";
 import { useStudentSchedule } from "../../hooks/useStudentSchedule";
 import { useClock } from "../../hooks/useClock";
-import { format } from "date-fns";
 import { DayOfWeek } from "../../types";
 import { noticesService } from "../../services/notices.service";
 import { academicUpdatesService } from "../../services/academicUpdates.service";
 import { whatsappService } from "../../services/whatsapp.service";
 import { formatDate, titleCase } from "../../utils/format";
 import { Notice, AcademicUpdate } from "../../types";
+
 
 const QUICK_LINKS = [
   {
@@ -145,63 +144,38 @@ export default function StudentDashboard() {
 
   return (
     <div className="space-y-8">
-      {/* Hero — a boarding-pass shaped card: greeting on top, live class status below the perforation */}
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.45, ease: "easeOut" }}
-        className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-brand-900 via-brand-800 to-brand-700 px-6 py-8 shadow-lg sm:px-10 sm:py-10"
-      >
-        <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-gold-400/10 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-24 left-1/3 h-64 w-64 rounded-full bg-white/5 blur-3xl" />
-
-        <div className="relative flex flex-wrap items-start justify-between gap-6">
-          <div className="flex items-center gap-4">
-            <PersonAvatar tone="gold" className="h-16 w-16 sm:h-20 sm:w-20" ringed src={user?.avatarUrl} />
-            <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.25em] text-gold-300">{greeting()}</p>
-              <h1 className="mt-1 font-serif text-3xl font-extrabold text-white sm:text-4xl">{firstName} 👋</h1>
-              <p className="mt-2 text-sm text-white/70">
-                {student?.department?.name} &middot; Year {student?.year} &middot; Section {student?.section} &middot; Roll No.{" "}
-                {student?.studentId}
+      <DashboardHero
+        eyebrow={greeting()}
+        title={firstName}
+        subtitle={
+          <>
+            {student?.department?.name} &middot; Year {student?.year} &middot; Section {student?.section} &middot; Roll No.{" "}
+            {student?.studentId}
+          </>
+        }
+        avatarTone="gold"
+        avatarSrc={user?.avatarUrl}
+        now={now}
+        statusContent={
+          liveClass || nextClass ? (
+            <div className="flex flex-wrap items-center gap-3">
+              <HeroStatusBadge tone={liveClass ? "positive" : "accent"}>
+                {liveClass ? <Radio className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
+                {liveClass ? "In Progress" : "Up Next"}
+              </HeroStatusBadge>
+              <p className="min-w-0 flex-1 truncate text-sm font-medium text-slate-700">
+                {(liveClass ?? nextClass)?.subject?.name}
+                <span className="text-slate-400">
+                  {" "}
+                  &middot; {(liveClass ?? nextClass)?.faculty?.fullName} &middot; Room {(liveClass ?? nextClass)?.room?.number}
+                </span>
               </p>
             </div>
-          </div>
-          <div className="hidden text-right text-white/80 sm:block">
-            <p className="font-mono text-2xl font-bold tabular-nums text-white">{format(now, "hh:mm:ss a")}</p>
-            <p className="text-xs text-white/60">{format(now, "EEEE, d MMMM yyyy")}</p>
-          </div>
-        </div>
-
-        {/* Perforation with punched notches, boarding-pass style */}
-        <div className="relative -mx-6 mt-7 border-t border-dashed border-white/25 pt-5 sm:-mx-10">
-          <span className="absolute -left-3 -top-3 h-6 w-6 rounded-full bg-slate-50" />
-          <span className="absolute -right-3 -top-3 h-6 w-6 rounded-full bg-slate-50" />
-          <div className="px-6 sm:px-10">
-            {liveClass || nextClass ? (
-              <div className="flex flex-wrap items-center gap-3">
-                <span
-                  className={`flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide text-brand-950 ${
-                    liveClass ? "bg-emerald-400" : "bg-gold-400"
-                  }`}
-                >
-                  {liveClass ? <Radio className="h-3 w-3 animate-pulse" /> : <Clock className="h-3 w-3" />}
-                  {liveClass ? "In Progress" : "Up Next"}
-                </span>
-                <p className="min-w-0 flex-1 truncate text-sm font-semibold text-white">
-                  {(liveClass ?? nextClass)?.subject?.name}
-                  <span className="font-normal text-white/60">
-                    {" "}
-                    &middot; {(liveClass ?? nextClass)?.faculty?.fullName} &middot; Room {(liveClass ?? nextClass)?.room?.number}
-                  </span>
-                </p>
-              </div>
-            ) : (
-              <p className="text-sm text-white/60">No more classes today — enjoy the rest of your day.</p>
-            )}
-          </div>
-        </div>
-      </motion.div>
+          ) : (
+            <p className="text-sm text-slate-400">No more classes today.</p>
+          )
+        }
+      />
 
       {/* Main + sidebar: what to DO on the left, what to KNOW on the right */}
       <div className="grid gap-6 lg:grid-cols-12">

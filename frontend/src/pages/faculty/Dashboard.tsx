@@ -1,9 +1,7 @@
-import { motion } from "framer-motion";
-import { format } from "date-fns";
 import { CalendarClock, BellRing } from "lucide-react";
 import { Card } from "../../components/ui/Card";
 import { EmptyState } from "../../components/ui/EmptyState";
-import { PersonAvatar } from "../../components/ui/Avatar";
+import { DashboardHero, HeroStatusBadge } from "../../components/dashboard/DashboardHero";
 import { SkeletonCard, SkeletonList } from "../../components/ui/Skeleton";
 import { ScheduleStrip } from "../../components/ScheduleStrip";
 import { BarChart } from "../../components/charts/BarChart";
@@ -55,82 +53,41 @@ export default function FacultyDashboard() {
 
   return (
     <div className="space-y-8">
-      {/* Hero — boarding-pass shaped: greeting on top, next-class status below the perforation */}
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{
-          opacity: 1,
-          y: 0,
-          scale: isImminent ? [1, 1.006, 1] : 1,
-        }}
-        transition={
-          isImminent
-            ? { scale: { duration: 2.4, repeat: Infinity, ease: "easeInOut" }, opacity: { duration: 0.4 }, y: { duration: 0.4 } }
-            : { duration: 0.45, ease: "easeOut" }
+      <DashboardHero
+        eyebrow={greeting()}
+        title={user?.faculty?.fullName ?? ""}
+        subtitle={
+          <>
+            {user?.faculty?.department?.name} &middot; {user?.faculty?.designation}
+          </>
         }
-        className={`relative overflow-hidden rounded-3xl bg-gradient-to-br from-brand-900 via-brand-800 to-brand-700 px-6 py-8 shadow-lg sm:px-10 sm:py-10 ${
-          isImminent ? "ring-2 ring-gold-400/70" : ""
-        }`}
-      >
-        {isImminent && (
-          <motion.div
-            className="pointer-events-none absolute inset-0 rounded-3xl"
-            animate={{ boxShadow: ["0 0 0 0 rgba(243,168,36,0.35)", "0 0 0 14px rgba(243,168,36,0)"] }}
-            transition={{ duration: 2.4, repeat: Infinity, ease: "easeOut" }}
-          />
-        )}
-        <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-gold-400/10 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-24 left-1/3 h-64 w-64 rounded-full bg-white/5 blur-3xl" />
-
-        <div className="relative flex flex-wrap items-start justify-between gap-6">
-          <div className="flex items-center gap-4">
-            <PersonAvatar tone="gold" className="h-16 w-16 sm:h-20 sm:w-20" ringed src={user?.avatarUrl} />
-            <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.25em] text-gold-300">{greeting()}</p>
-              <h1 className="mt-1 font-serif text-3xl font-extrabold text-white sm:text-4xl">{user?.faculty?.fullName}</h1>
-              <p className="mt-2 text-sm text-white/70">
-                {user?.faculty?.department?.name} &middot; {user?.faculty?.designation}
+        avatarTone="gold"
+        avatarSrc={user?.avatarUrl}
+        now={now}
+        statusContent={
+          nextClass ? (
+            <div className="flex flex-wrap items-center gap-3">
+              <HeroStatusBadge tone={isImminent ? "accent" : "neutral"}>
+                <CalendarClock className="h-3 w-3" /> Next Class
+              </HeroStatusBadge>
+              <p className="min-w-0 flex-1 text-sm font-medium text-slate-700">
+                {nextClass.subject?.name}
+                <span className="text-slate-400">
+                  {" "}
+                  &middot; {nextClass.startTime} &middot; Room {nextClass.room?.number}, {nextClass.block?.name}
+                </span>
+                {minutesUntilNext !== null && (
+                  <span className="ml-2 rounded-md border border-slate-300 bg-white px-2 py-0.5 text-xs font-semibold text-slate-600">
+                    in {minutesUntilNext} min
+                  </span>
+                )}
               </p>
             </div>
-          </div>
-          <div className="hidden text-right text-white/80 sm:block">
-            <p className="font-mono text-2xl font-bold tabular-nums text-white">{format(now, "hh:mm:ss a")}</p>
-            <p className="text-xs text-white/60">{format(now, "EEEE, d MMMM yyyy")}</p>
-          </div>
-        </div>
-
-        <div className="relative -mx-6 mt-7 border-t border-dashed border-white/25 pt-5 sm:-mx-10">
-          <span className="absolute -left-3 -top-3 h-6 w-6 rounded-full bg-slate-50" />
-          <span className="absolute -right-3 -top-3 h-6 w-6 rounded-full bg-slate-50" />
-          <div className="px-6 sm:px-10">
-            {nextClass ? (
-              <div className="flex flex-wrap items-center gap-3">
-                <span
-                  className={`flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide text-brand-950 ${
-                    isImminent ? "bg-gold-400" : "bg-white/15 text-white"
-                  }`}
-                >
-                  <CalendarClock className="h-3 w-3" /> Next Class
-                </span>
-                <p className="min-w-0 flex-1 text-sm font-semibold text-white">
-                  {nextClass.subject?.name}
-                  <span className="font-normal text-white/60">
-                    {" "}
-                    &middot; {nextClass.startTime} &middot; Room {nextClass.room?.number}, {nextClass.block?.name}
-                  </span>
-                  {minutesUntilNext !== null && (
-                    <span className={`ml-2 rounded-full px-2.5 py-0.5 text-xs font-bold ${isImminent ? "bg-gold-400 text-brand-900" : "bg-white/15"}`}>
-                      in {minutesUntilNext} min
-                    </span>
-                  )}
-                </p>
-              </div>
-            ) : (
-              <p className="text-sm text-white/60">No more classes today — enjoy the rest of your day!</p>
-            )}
-          </div>
-        </div>
-      </motion.div>
+          ) : (
+            <p className="text-sm text-slate-400">No more classes today.</p>
+          )
+        }
+      />
 
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-gold-200 bg-gold-50 px-5 py-4">
         <div className="flex items-center gap-3">
