@@ -23,4 +23,8 @@ export const adminService = {
     const res = await api.get<{ data: DashboardData }>("/admin/dashboard");
     return res.data.data;
   },
+  async updateSelf(data: { fullName: string }) {
+    const res = await api.put<{ data: { fullName: string } }>("/admin/me", data);
+    return res.data.data;
+  },
 };

@@ -16,6 +16,7 @@ import {
   FileSpreadsheet,
   Building2,
   BarChart3,
+  User,
 } from "lucide-react";
 import { DashboardLayout, NavItem } from "./DashboardLayout";
 
@@ -44,6 +45,7 @@ const navItems: NavItem[] = [
   { label: "Branch Accounts", to: "/admin/branch-accounts", icon: Building2 },
   { label: "Reports", to: "/admin/reports", icon: BarChart3 },
   { label: "Audit Logs", to: "/admin/audit-logs", icon: ClipboardList },
+  { label: "Profile", to: "/admin/profile", icon: User },
 ];
 
 export default function AdminDashboardLayout() {

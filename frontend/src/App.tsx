@@ -55,6 +55,7 @@ import AdminLinksSettings from "./pages/admin/LinksSettings";
 import AdminDataImport from "./pages/admin/DataImport";
 import AdminMarks from "./pages/admin/Marks";
 import AdminAuditLogs from "./pages/admin/AuditLogs";
+import AdminProfile from "./pages/admin/Profile";
 import AdminBranchAccounts from "./pages/admin/BranchAccounts";
 import AdminReports from "./pages/admin/Reports";
 
@@ -131,6 +132,7 @@ export default function App() {
                 <Route path="branch-accounts" element={<AdminBranchAccounts />} />
                 <Route path="reports" element={<AdminReports />} />
                 <Route path="audit-logs" element={<AdminAuditLogs />} />
+                <Route path="profile" element={<AdminProfile />} />
               </Route>
             </Route>
 

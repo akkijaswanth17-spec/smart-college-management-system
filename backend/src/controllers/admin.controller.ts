@@ -74,3 +74,13 @@ export const getDashboardStats = asyncHandler(async (_req: Request, res: Respons
     },
   });
 });
+
+export const updateSelf = asyncHandler(async (req: Request, res: Response) => {
+  const { fullName } = req.body;
+  const admin = await prisma.admin.upsert({
+    where: { userId: req.user!.userId },
+    update: { fullName },
+    create: { userId: req.user!.userId, fullName },
+  });
+  res.json({ success: true, data: admin });
+});
