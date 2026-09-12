@@ -7,7 +7,6 @@ import cookieParser from "cookie-parser";
 import path from "path";
 import { env } from "./config/env";
 import routes from "./routes";
-import { prisma } from "./config/prisma";
 import { notFoundHandler, errorHandler } from "./middleware/error.middleware";
 import { apiRateLimiter } from "./middleware/rateLimit.middleware";
 
@@ -48,18 +47,6 @@ app.use("/uploads", express.static(env.uploadDir));
 app.use("/import-templates", express.static(path.resolve(__dirname, "../../import-templates")));
 
 app.get("/api/health", (_req, res) => res.json({ success: true, status: "ok" }));
-
-// TEMPORARY — diagnosing why production login fails; aggregate counts only,
-// no personal data. Remove once the data question is settled.
-app.get("/api/health/db-counts", async (_req, res) => {
-  const [students, faculty, admins, departments] = await Promise.all([
-    prisma.student.count(),
-    prisma.faculty.count(),
-    prisma.user.count({ where: { role: "ADMIN" } }),
-    prisma.department.count(),
-  ]);
-  res.json({ success: true, data: { students, faculty, admins, departments } });
-});
 
 app.use("/api", routes);
 
