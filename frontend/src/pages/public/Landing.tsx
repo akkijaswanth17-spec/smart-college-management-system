@@ -137,7 +137,7 @@ export default function Landing() {
           <motion.h1 variants={heroItem} className="mt-5 max-w-3xl font-serif text-4xl font-bold uppercase leading-[1.12] text-white sm:text-6xl">
             {COLLEGE_NAME_SHORT}
             <br />
-            <span className="italic text-gold-300">{COLLEGE_TAGLINE}</span>
+            <span className="italic text-white">{COLLEGE_TAGLINE}</span>
           </motion.h1>
 
           <motion.p variants={heroItem} className="mt-6 max-w-lg text-base text-white/75 sm:text-lg">

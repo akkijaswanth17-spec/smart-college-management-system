@@ -1,18 +1,40 @@
+// Imports the real III DCME / V SEM A timetable (DCME-F014 photo) into the system.
+// DCME maps to the existing CSE department. Room/Block are not shown on the timetable
+// photo, so this uses an explicit "Not Specified" placeholder — update via Room
+// Management once the real room is known; it is never presented as real data.
+//
+// Run AFTER backend/scripts/create-dcme-timetable-faculty.js (this script expects the
+// 7 faculty accounts to already exist and will fail loudly if any are missing, rather
+// than silently creating duplicate accounts with a different, weaker password scheme).
+//
+// Run against production: node backend/scripts/import-dcme-timetable.js
+
+const fs = require("fs");
+const path = require("path");
 const { PrismaClient } = require("@prisma/client");
-const bcrypt = require("bcryptjs");
 
-const prisma = new PrismaClient();
+const envProdPath = path.join(__dirname, "../deploy/.env.production");
+const envProd = fs.readFileSync(envProdPath, "utf8");
+const match = envProd.match(/^DATABASE_URL="(.*)"$/m);
+if (!match) throw new Error("Could not find DATABASE_URL in backend/deploy/.env.production");
+const DATABASE_URL = match[1];
 
+const prisma = new PrismaClient({ datasources: { db: { url: DATABASE_URL } } });
+
+const DEPARTMENT_CODE = "CSE";
 const ACADEMIC_YEAR = "2026-2027";
+const YEAR = 3;
+const SECTION = "A";
 
-const FACULTY = {
-  IME_F: { facultyId: "2095", fullName: "Mr. Emmanuel", designation: "Lecturer" },
-  BDCC_F: { facultyId: "1660", fullName: "Mr. S. Ravikanth", designation: "Lecturer" },
-  AP_F: { facultyId: "2202", fullName: "Ms. Chandra Bhanu", designation: "Lecturer" },
-  IOT_F: { facultyId: "1614", fullName: "Mr. Venu Babu", designation: "Lecturer" },
-  PP_F: { facultyId: "2194", fullName: "Mr. SK. John Basha", designation: "Lecturer" },
-  LS_F: { facultyId: "2201", fullName: "Mr. J. Venkateswara Rao", designation: "Lecturer" },
-  SEM_F: { facultyId: "2130", fullName: "Mr. K.N.V.B.G. Pavan Kumar", designation: "Lecturer" },
+// facultyId -> subject key, from the real timetable photo.
+const FACULTY_IDS = {
+  IME_F: "2095",
+  BDCC_F: "1660",
+  AP_F: "2202",
+  IOT_F: "1614",
+  PP_F: "2194",
+  LS_F: "2201",
+  SEM_F: "2130",
 };
 
 const SUBJECTS = [
@@ -28,9 +50,8 @@ const SUBJECTS = [
   { key: "Seminar", code: "CM-510", name: "Seminar", facultyKey: "SEM_F" },
 ];
 
-// day, startTime, endTime, subjectKey
+// day, startTime, endTime, subjectKey — transcribed directly from the timetable photo.
 const GRID = [
-  // Monday
   ["MONDAY", "09:00", "10:00", "PP"],
   ["MONDAY", "10:00", "11:00", "IME"],
   ["MONDAY", "11:00", "12:00", "BDCC"],
@@ -38,13 +59,11 @@ const GRID = [
   ["MONDAY", "13:30", "14:20", "IoT"],
   ["MONDAY", "14:30", "15:20", "PP"],
   ["MONDAY", "15:20", "16:10", "BDCC"],
-  // Tuesday
   ["TUESDAY", "09:00", "10:00", "IME"],
   ["TUESDAY", "10:00", "11:00", "IoT"],
   ["TUESDAY", "11:00", "12:00", "AP"],
   ["TUESDAY", "12:40", "13:30", "PP"],
   ["TUESDAY", "13:30", "15:20", "AP LAB"],
-  // Wednesday
   ["WEDNESDAY", "09:00", "10:00", "AP"],
   ["WEDNESDAY", "10:00", "11:00", "LifeSkills"],
   ["WEDNESDAY", "11:00", "12:00", "Seminar"],
@@ -52,7 +71,6 @@ const GRID = [
   ["WEDNESDAY", "13:30", "14:20", "BDCC"],
   ["WEDNESDAY", "14:30", "15:20", "AP"],
   ["WEDNESDAY", "15:20", "16:10", "IoT"],
-  // Thursday
   ["THURSDAY", "09:00", "10:00", "IoT"],
   ["THURSDAY", "10:00", "11:00", "BDCC"],
   ["THURSDAY", "11:00", "12:00", "IME"],
@@ -60,13 +78,11 @@ const GRID = [
   ["THURSDAY", "13:30", "14:20", "BDCC"],
   ["THURSDAY", "14:30", "15:20", "PP"],
   ["THURSDAY", "15:20", "16:10", "Seminar"],
-  // Friday
   ["FRIDAY", "09:00", "12:00", "PROJECTWORK"],
   ["FRIDAY", "12:40", "13:30", "AP"],
   ["FRIDAY", "13:30", "14:20", "IME"],
   ["FRIDAY", "14:30", "15:20", "LifeSkills"],
   ["FRIDAY", "15:20", "16:10", "PP"],
-  // Saturday
   ["SATURDAY", "09:00", "12:00", "PPLAB"],
   ["SATURDAY", "12:40", "13:30", "IoT"],
   ["SATURDAY", "13:30", "14:20", "PP"],
@@ -75,54 +91,36 @@ const GRID = [
 ];
 
 async function main() {
-  console.log("Importing DCME III/V Sem A timetable...");
+  console.log(`Importing III/V SEM A timetable into ${DEPARTMENT_CODE}...`);
 
-  const dept = await prisma.department.upsert({
-    where: { code: "DCME" },
-    update: {},
-    create: { name: "Diploma in Computer Engineering", code: "DCME" },
-  });
+  const dept = await prisma.department.findUnique({ where: { code: DEPARTMENT_CODE } });
+  if (!dept) throw new Error(`Department ${DEPARTMENT_CODE} not found`);
 
   const block = await prisma.block.upsert({
-    where: { name: "Main Block" },
+    where: { name: "Not Specified" },
     update: {},
-    create: { name: "Main Block" },
+    create: { name: "Not Specified" },
   });
   const room = await prisma.room.upsert({
-    where: { number_blockId: { number: "DCME-301", blockId: block.id } },
+    where: { number_blockId: { number: "TBD", blockId: block.id } },
     update: {},
-    create: { number: "DCME-301", blockId: block.id },
+    create: { number: "TBD", blockId: block.id },
   });
 
   const facultyIdByKey = {};
-  for (const [key, f] of Object.entries(FACULTY)) {
-    const email = `${f.facultyId}@mictech.ac.in`;
-    const existing = await prisma.faculty.findUnique({ where: { facultyId: f.facultyId } });
-    if (existing) {
-      facultyIdByKey[key] = existing.id;
+  const missing = [];
+  for (const [key, facultyId] of Object.entries(FACULTY_IDS)) {
+    const faculty = await prisma.faculty.findUnique({ where: { facultyId } });
+    if (!faculty) {
+      missing.push(facultyId);
       continue;
     }
-    const passwordHash = await bcrypt.hash(`Faculty@${f.facultyId}`, 12);
-    const user = await prisma.user.create({
-      data: {
-        email,
-        passwordHash,
-        role: "FACULTY",
-        mustChangePassword: true,
-        faculty: {
-          create: {
-            facultyId: f.facultyId,
-            fullName: f.fullName,
-            phone: "9000000000",
-            departmentId: dept.id,
-            designation: f.designation,
-          },
-        },
-      },
-      include: { faculty: true },
-    });
-    facultyIdByKey[key] = user.faculty.id;
-    console.log(`Created faculty ${f.fullName} (${email}) — temp password: Faculty@${f.facultyId}`);
+    facultyIdByKey[key] = faculty.id;
+  }
+  if (missing.length > 0) {
+    throw new Error(
+      `Faculty ID(s) not found: ${missing.join(", ")}. Run backend/scripts/create-dcme-timetable-faculty.js first.`
+    );
   }
 
   const subjectIdByKey = {};
@@ -137,7 +135,7 @@ async function main() {
 
   // Clear any previous import of this exact class before re-inserting, so this script is safely re-runnable.
   await prisma.timetableEntry.deleteMany({
-    where: { departmentId: dept.id, year: 3, section: "A", academicYear: ACADEMIC_YEAR },
+    where: { departmentId: dept.id, year: YEAR, section: SECTION, academicYear: ACADEMIC_YEAR },
   });
 
   let created = 0;
@@ -152,8 +150,8 @@ async function main() {
         facultyId: subj.facultyId,
         subjectId: subj.id,
         departmentId: dept.id,
-        year: 3,
-        section: "A",
+        year: YEAR,
+        section: SECTION,
         day,
         startTime,
         endTime,
@@ -165,8 +163,8 @@ async function main() {
     created++;
   }
 
-  console.log(`\nDone. Created ${created} timetable entries for DCME, Year 3, Section A, ${ACADEMIC_YEAR}.`);
-  console.log("Class Incharge (for reference): Mr. SK. John Basha");
+  console.log(`\nDone. Created ${created} timetable entries for ${DEPARTMENT_CODE}, Year ${YEAR}, Section ${SECTION}, ${ACADEMIC_YEAR}.`);
+  console.log('Room/Block are placeholders ("TBD" / "Not Specified") — update via Room Management once known.');
 }
 
 main()
