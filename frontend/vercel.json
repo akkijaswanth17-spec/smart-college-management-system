@@ -1,0 +1,7 @@
+{
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "https://smart-college-management-system-ec6d.onrender.com/api/:path*" },
+    { "source": "/uploads/:path*", "destination": "https://smart-college-management-system-ec6d.onrender.com/uploads/:path*" },
+    { "source": "/import-templates/:path*", "destination": "https://smart-college-management-system-ec6d.onrender.com/import-templates/:path*" }
+  ]
+}
