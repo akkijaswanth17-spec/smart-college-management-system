@@ -136,7 +136,6 @@ export default function StudentDashboard() {
       .finally(() => setLoading(false));
   }, [student?.departmentId]);
 
-  const firstName = student?.fullName?.split(" ")[0] ?? "";
   const feed = [
     ...notices.map((n) => ({ kind: "notice" as const, id: n.id, title: n.title, category: n.category, date: n.publishedDate ?? n.createdAt })),
     ...updates.map((u) => ({ kind: "update" as const, id: u.id, title: u.title, category: u.category, date: u.date })),
@@ -146,7 +145,7 @@ export default function StudentDashboard() {
     <div className="space-y-8">
       <DashboardHero
         eyebrow={greeting()}
-        title={firstName}
+        title={student?.fullName ?? ""}
         subtitle={
           <>
             {student?.department?.name} &middot; Year {student?.year} &middot; Section {student?.section} &middot; Roll No.{" "}
