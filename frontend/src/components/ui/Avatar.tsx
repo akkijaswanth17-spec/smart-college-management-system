@@ -26,7 +26,7 @@ export function PersonAvatar({
       <img
         src={src}
         alt={alt}
-        className={`shrink-0 rounded-full object-cover shadow-inner ${ringed ? "ring-2 ring-white/70" : ""} ${className}`}
+        className={`shrink-0 rounded-full object-cover object-top shadow-inner ${ringed ? "ring-2 ring-white/70" : ""} ${className}`}
       />
     );
   }
