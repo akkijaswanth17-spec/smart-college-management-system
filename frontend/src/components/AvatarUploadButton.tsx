@@ -1,12 +1,15 @@
 import { useRef, useState, ChangeEvent } from "react";
-import { Camera, Loader2 } from "lucide-react";
+import { Plus, Loader2, X } from "lucide-react";
 import { PersonAvatar } from "./ui/Avatar";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
 import { uploadAvatar } from "../services/auth.service";
 import { getErrorMessage } from "../services/api";
 
-/** Click-to-change profile photo — available to every logged-in role. */
+/**
+ * Profile photo — clicking the photo itself opens a full-size preview; the small "+"
+ * badge in the corner is the actual upload/change trigger, always visible (not just on hover).
+ */
 export function AvatarUploadButton({
   size = "h-9 w-9",
   tone = "brand",
@@ -20,6 +23,7 @@ export function AvatarUploadButton({
   const toast = useToast();
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   async function handleFile(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -38,27 +42,61 @@ export function AvatarUploadButton({
   }
 
   return (
-    <button
-      type="button"
-      onClick={() => inputRef.current?.click()}
-      className="group relative shrink-0 rounded-full"
-      title="Change profile photo"
-    >
-      <PersonAvatar tone={tone} className={size} ringed={ringed} src={user?.avatarUrl} />
-      <span className="absolute inset-0 flex items-center justify-center rounded-full bg-black/0 opacity-0 transition-all duration-150 group-hover:bg-black/40 group-hover:opacity-100">
-        {uploading ? (
-          <Loader2 className="h-1/2 w-1/2 animate-spin text-white" />
-        ) : (
-          <Camera className="h-1/2 w-1/2 text-white" />
-        )}
-      </span>
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/jpeg,image/png,image/webp"
-        className="hidden"
-        onChange={handleFile}
-      />
-    </button>
+    <>
+      <div className={`relative shrink-0 ${size}`}>
+        <button
+          type="button"
+          onClick={() => (user?.avatarUrl ? setPreviewOpen(true) : inputRef.current?.click())}
+          className="block h-full w-full rounded-full"
+          title={user?.avatarUrl ? "View profile photo" : "Add profile photo"}
+        >
+          <PersonAvatar tone={tone} className="h-full w-full" ringed={ringed} src={user?.avatarUrl} />
+        </button>
+
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          disabled={uploading}
+          title="Change profile photo"
+          className="absolute -bottom-0.5 -right-0.5 flex h-[45%] w-[45%] min-h-[16px] min-w-[16px] items-center justify-center rounded-full border-2 border-white bg-brand-800 text-white shadow-sm transition-colors hover:bg-brand-700"
+        >
+          {uploading ? (
+            <Loader2 className="h-2/3 w-2/3 animate-spin" />
+          ) : (
+            <Plus className="h-2/3 w-2/3" strokeWidth={3} />
+          )}
+        </button>
+
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          className="hidden"
+          onChange={handleFile}
+        />
+      </div>
+
+      {previewOpen && user?.avatarUrl && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-brand-950/80 p-4 backdrop-blur-sm"
+          onClick={() => setPreviewOpen(false)}
+        >
+          <button
+            type="button"
+            onClick={() => setPreviewOpen(false)}
+            className="absolute right-4 top-4 rounded-full bg-white/10 p-2 text-white transition-colors hover:bg-white/20"
+            aria-label="Close"
+          >
+            <X className="h-5 w-5" />
+          </button>
+          <img
+            src={user.avatarUrl}
+            alt="Profile photo"
+            className="max-h-[85vh] max-w-[90vw] rounded-2xl object-contain shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
+    </>
   );
 }
