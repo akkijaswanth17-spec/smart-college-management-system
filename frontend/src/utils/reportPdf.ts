@@ -5,6 +5,7 @@ import type { jsPDF as JsPDF } from "jspdf";
 import logoUrl from "../assets/college-logo.jpeg";
 import { COLLEGE_NAME } from "../constants";
 import { StudentDetailsReportData, StudentMarksReportData, FacultyDetailsReportData } from "../types";
+import { shortAcademicYear } from "./format";
 
 const NAVY = "#071a33";
 const GOLD = "#b8944a";
@@ -36,7 +37,7 @@ function formatDateTime(date: Date) {
   return date.toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" });
 }
 
-async function addHeader(pdf: JsPDF, title: string) {
+async function addHeader(pdf: JsPDF, title: string, titleBadge?: string) {
   const pageWidth = pdf.internal.pageSize.getWidth();
   const logo = await loadLogoDataUrl();
 
@@ -67,6 +68,13 @@ async function addHeader(pdf: JsPDF, title: string) {
   pdf.setFontSize(13);
   pdf.setTextColor(NAVY);
   pdf.text(title.toUpperCase(), pageWidth / 2, MARGIN + 76, { align: "center" });
+
+  if (titleBadge) {
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(9);
+    pdf.setTextColor(SLATE);
+    pdf.text(`A.Y. ${titleBadge}`, pageWidth - MARGIN, MARGIN + 76, { align: "right" });
+  }
 
   return MARGIN + 96;
 }
@@ -136,7 +144,8 @@ export async function generateStudentDetailsPdf(data: StudentDetailsReportData, 
 export async function generateStudentMarksPdf(data: StudentMarksReportData, generatedBy: string) {
   const [{ jsPDF }, { default: autoTable }] = await Promise.all([import("jspdf"), import("jspdf-autotable")]);
   const pdf = new jsPDF({ unit: "pt", format: "a4" });
-  const startY = await addHeader(pdf, "Student Marks Report");
+  const academicYear = data.subjects[0] ? shortAcademicYear(data.subjects[0].academicYear) : undefined;
+  const startY = await addHeader(pdf, "Student Marks Report", academicYear);
 
   let y = fieldRows(pdf, startY + 10, [
     ["Student Name", data.fullName],
@@ -156,13 +165,12 @@ export async function generateStudentMarksPdf(data: StudentMarksReportData, gene
     autoTable(pdf, {
       startY: y,
       margin: { left: MARGIN, right: MARGIN },
-      head: [["Subject", "Mid 1", "Mid 2", "Semester", "Academic Year"]],
+      head: [["Subject", "Mid 1", "Mid 2", "Semester"]],
       body: data.subjects.map((s) => [
         s.subject,
         s.mid1 ?? "—",
         s.mid2 ?? "—",
         s.semester ?? "—",
-        s.academicYear,
       ]),
       headStyles: { fillColor: [7, 26, 51], textColor: 255, fontStyle: "bold" },
       styles: { fontSize: 9, textColor: [7, 26, 51] },

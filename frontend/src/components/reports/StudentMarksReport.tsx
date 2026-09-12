@@ -10,6 +10,7 @@ import { useToast } from "../../context/ToastContext";
 import { useAuth } from "../../context/AuthContext";
 import { getDisplayName } from "../../utils/displayName";
 import { getErrorMessage } from "../../services/api";
+import { shortAcademicYear } from "../../utils/format";
 import { StudentMarksReportData } from "../../types";
 
 function MarksBody({ data }: { data: StudentMarksReportData }) {
@@ -43,7 +44,6 @@ function MarksBody({ data }: { data: StudentMarksReportData }) {
                 <th className="px-3 py-2">Mid 1</th>
                 <th className="px-3 py-2">Mid 2</th>
                 <th className="px-3 py-2">Semester</th>
-                <th className="px-3 py-2">Academic Year</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -53,7 +53,6 @@ function MarksBody({ data }: { data: StudentMarksReportData }) {
                   <td className="px-3 py-2">{s.mid1 ?? "—"}</td>
                   <td className="px-3 py-2">{s.mid2 ?? "—"}</td>
                   <td className="px-3 py-2">{s.semester ?? "—"}</td>
-                  <td className="px-3 py-2 text-slate-500">{s.academicYear}</td>
                 </tr>
               ))}
             </tbody>
@@ -141,6 +140,7 @@ export function StudentMarksReport() {
           open={previewOpen}
           onClose={() => setPreviewOpen(false)}
           reportTitle="Student Marks Report"
+          titleBadge={data.subjects[0] ? shortAcademicYear(data.subjects[0].academicYear) : undefined}
           generatedBy={generatedBy}
           onDownload={handleDownload}
           downloading={downloading}

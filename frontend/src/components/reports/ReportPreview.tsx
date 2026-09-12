@@ -15,6 +15,7 @@ export function ReportPreview({
   open,
   onClose,
   reportTitle,
+  titleBadge,
   generatedBy,
   onDownload,
   downloading,
@@ -24,6 +25,8 @@ export function ReportPreview({
   open: boolean;
   onClose: () => void;
   reportTitle: string;
+  /** Short label shown to the right of the title, e.g. an academic year like "26-27". */
+  titleBadge?: string;
   generatedBy: string;
   onDownload: () => void;
   downloading: boolean;
@@ -48,9 +51,14 @@ export function ReportPreview({
             <p className="text-xs uppercase tracking-wide text-slate-500">Smart College Management System</p>
           </div>
         </div>
-        <h3 className="mt-4 text-center font-serif text-base font-bold uppercase tracking-wide text-brand-900">
-          {reportTitle}
-        </h3>
+        <div className="relative mt-4 flex items-center justify-center">
+          <h3 className="text-center font-serif text-base font-bold uppercase tracking-wide text-brand-900">
+            {reportTitle}
+          </h3>
+          {titleBadge && (
+            <span className="absolute right-0 text-xs font-semibold text-slate-500">A.Y. {titleBadge}</span>
+          )}
+        </div>
 
         <div className="mt-5">{children}</div>
 

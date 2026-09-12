@@ -25,3 +25,9 @@ export function titleCase(value: string): string {
 }
 
 export const DAYS_OF_WEEK = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"] as const;
+
+/** "2026-2027" -> "26-27" */
+export function shortAcademicYear(academicYear: string): string {
+  const match = academicYear.match(/^(\d{2})(\d{2})-(\d{2})(\d{2})$/);
+  return match ? `${match[2]}-${match[4]}` : academicYear;
+}
