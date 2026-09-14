@@ -17,6 +17,7 @@ import pushRoutes from "./push.routes";
 import marksRoutes from "./marks.routes";
 import branchAdminRoutes from "./branchAdmin.routes";
 import reportsRoutes from "./reports.routes";
+import promotionRoutes from "./promotion.routes";
 
 const router = Router();
 
@@ -38,5 +39,6 @@ router.use("/push", pushRoutes);
 router.use("/marks", marksRoutes);
 router.use("/branch-admins", branchAdminRoutes);
 router.use("/reports", reportsRoutes);
+router.use("/promotions", promotionRoutes);
 
 export default router;

@@ -58,6 +58,7 @@ import AdminAuditLogs from "./pages/admin/AuditLogs";
 import AdminProfile from "./pages/admin/Profile";
 import AdminBranchAccounts from "./pages/admin/BranchAccounts";
 import AdminReports from "./pages/admin/Reports";
+import AdminPromotions from "./pages/admin/Promotions";
 
 import BranchDashboardLayout from "./layouts/BranchDashboardLayout";
 
@@ -129,6 +130,7 @@ export default function App() {
                 <Route path="settings" element={<AdminLinksSettings />} />
                 <Route path="import" element={<AdminDataImport />} />
                 <Route path="marks" element={<AdminMarks />} />
+                <Route path="promotions" element={<AdminPromotions />} />
                 <Route path="branch-accounts" element={<AdminBranchAccounts />} />
                 <Route path="reports" element={<AdminReports />} />
                 <Route path="audit-logs" element={<AdminAuditLogs />} />
@@ -144,6 +146,7 @@ export default function App() {
                 <Route path="faculty" element={<AdminFaculty />} />
                 <Route path="timetable" element={<AdminTimetable />} />
                 <Route path="marks" element={<AdminMarks />} />
+                <Route path="promotions" element={<AdminPromotions />} />
                 <Route path="reports" element={<AdminReports />} />
               </Route>
             </Route>

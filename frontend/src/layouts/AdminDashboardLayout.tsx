@@ -17,6 +17,7 @@ import {
   Building2,
   BarChart3,
   User,
+  TrendingUp,
 } from "lucide-react";
 import { DashboardLayout, NavItem } from "./DashboardLayout";
 
@@ -42,6 +43,7 @@ const navItems: NavItem[] = [
   { label: "Links & Settings", to: "/admin/settings", icon: Link2 },
   { label: "Data Import", to: "/admin/import", icon: Database },
   { label: "Marks", to: "/admin/marks", icon: FileSpreadsheet },
+  { label: "Promotions", to: "/admin/promotions", icon: TrendingUp },
   { label: "Branch Accounts", to: "/admin/branch-accounts", icon: Building2 },
   { label: "Reports", to: "/admin/reports", icon: BarChart3 },
   { label: "Audit Logs", to: "/admin/audit-logs", icon: ClipboardList },

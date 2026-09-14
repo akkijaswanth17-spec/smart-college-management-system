@@ -37,7 +37,8 @@ export type AuditAction =
   | "WHATSAPP_REQUEST_REJECTED"
   | "USER_DEACTIVATED"
   | "USER_ACTIVATED"
-  | "SETTING_UPDATED";
+  | "SETTING_UPDATED"
+  | "STUDENTS_PROMOTED";
 
 interface AuditParams {
   userId?: string;
