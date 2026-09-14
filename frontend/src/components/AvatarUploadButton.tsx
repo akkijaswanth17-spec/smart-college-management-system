@@ -5,6 +5,7 @@ import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
 import { uploadAvatar } from "../services/auth.service";
 import { getErrorMessage } from "../services/api";
+import { compressImage } from "../utils/compressImage";
 
 /**
  * Profile photo — clicking the photo itself opens a full-size preview; the small "+"
@@ -31,7 +32,11 @@ export function AvatarUploadButton({
     if (!file) return;
     setUploading(true);
     try {
-      const updated = await uploadAvatar(file);
+      // Phone camera photos are routinely several MB at full resolution — shrink
+      // client-side before upload so they reliably fit the server's size limit
+      // and don't bloat every future page load with a huge embedded image.
+      const compressed = await compressImage(file);
+      const updated = await uploadAvatar(compressed);
       setUser(updated);
       toast.success("Profile photo updated");
     } catch (err) {

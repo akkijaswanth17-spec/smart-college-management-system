@@ -34,11 +34,11 @@ export async function resetPassword(email: string, code: string, newPassword: st
   await api.post("/auth/reset-password", { email, code, newPassword, confirmPassword });
 }
 
-export async function uploadAvatar(file: File) {
+export async function uploadAvatar(file: Blob) {
   const payload = new FormData();
-  payload.append("avatar", file);
-  const res = await api.post<{ data: AuthUser }>("/auth/avatar", payload, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
+  payload.append("avatar", file, "avatar.jpg");
+  // No explicit Content-Type here — the browser needs to generate the
+  // multipart boundary itself from the FormData; overriding it breaks parsing.
+  const res = await api.post<{ data: AuthUser }>("/auth/avatar", payload);
   return res.data.data;
 }
