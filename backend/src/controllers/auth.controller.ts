@@ -56,7 +56,7 @@ export const resetPassword = asyncHandler(async (req: Request, res: Response) =>
 export const uploadAvatar = asyncHandler(async (req: Request, res: Response) => {
   if (!req.file) throw ApiError.badRequest("No image was uploaded");
 
-  const avatarUrl = `/uploads/avatars/${req.file.filename}`;
+  const avatarUrl = `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`;
   const user = await prisma.user.update({
     where: { id: req.user!.userId },
     data: { avatarUrl },

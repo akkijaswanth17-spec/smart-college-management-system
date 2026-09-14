@@ -83,10 +83,13 @@ export const uploadBrandingImage = multer({
   limits,
 }).single("image");
 
+// Render's free-tier filesystem is wiped on every redeploy, so avatars are kept
+// in memory here and stored as a data URI in the database (see auth.controller)
+// instead of on disk like the other upload types below.
 export const uploadAvatarImage = multer({
-  storage: makeStorage("avatars"),
+  storage: multer.memoryStorage(),
   fileFilter: fileFilterFor(ALLOWED_IMAGE_TYPES),
-  limits,
+  limits: { fileSize: 2 * 1024 * 1024 },
 }).single("avatar");
 
 export const uploadImportFile = multer({

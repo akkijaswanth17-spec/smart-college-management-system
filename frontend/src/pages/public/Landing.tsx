@@ -371,7 +371,7 @@ export default function Landing() {
           <motion.div {...fadeUp()} className="mx-auto md:mx-0">
             <div className="relative w-56 md:w-full">
               <div className="overflow-hidden rounded-2xl border-4 border-gold-400 shadow-2xl">
-                <img src={principal} alt="Guntu Rajesh, Principal" className="aspect-[4/5] w-full object-cover" />
+                <img src={principal} alt="Dr. Gunti Rajesh, Principal" className="aspect-[4/5] w-full object-cover" />
               </div>
               <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-gold-400 px-4 py-1 text-xs font-bold uppercase tracking-wide text-brand-950 shadow-md">
                 Principal
@@ -382,10 +382,10 @@ export default function Landing() {
           <motion.div {...fadeUp(0.1)} className="text-center md:text-left">
             <Quote className="mx-auto h-8 w-8 text-gold-300 md:mx-0" />
             <p className="mt-2 text-sm font-semibold uppercase tracking-[0.3em] text-white/50">From the Principal&rsquo;s Desk</p>
-            <h2 className="mt-3 font-serif text-3xl font-bold text-white sm:text-4xl">Sri Guntu Rajesh</h2>
+            <h2 className="mt-3 font-serif text-3xl font-bold text-white sm:text-4xl">Dr.Gunti Rajesh</h2>
             <p className="mt-1 text-sm font-semibold uppercase tracking-wide text-gold-300">Principal, Diploma Wing</p>
             <p className="mx-auto mt-5 max-w-2xl text-base leading-relaxed text-white/70 md:mx-0">
-              Discipline is the foundation on which every lasting institution is built — and it is a value Sri Guntu
+              Discipline is the foundation on which every lasting institution is built — and it is a value Dr. Gunti
               Rajesh upholds without compromise. Under his stewardship, the Diploma Wing has become synonymous with
               order, rigor and integrity, shaping engineers who are as dependable in character as they are skilled
               in their craft. His vision is simple: excellence is not an event, it is a discipline practiced every
