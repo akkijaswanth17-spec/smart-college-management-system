@@ -31,11 +31,14 @@ export function LoginMenu({
 
   useEffect(() => {
     if (!open) return;
-    const onClick = (e: MouseEvent) => {
+    // pointerdown (not mousedown) — mousedown's synthetic mobile-tap equivalent
+    // can be delayed or skipped on some Android/Chrome versions, which left this
+    // dropdown stuck open until a second tap.
+    const onClick = (e: PointerEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     };
-    document.addEventListener("mousedown", onClick);
-    return () => document.removeEventListener("mousedown", onClick);
+    document.addEventListener("pointerdown", onClick);
+    return () => document.removeEventListener("pointerdown", onClick);
   }, [open]);
 
   return (

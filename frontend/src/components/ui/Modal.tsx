@@ -25,7 +25,15 @@ export function Modal({ open, onClose, title, children, maxWidth = "max-w-lg" }:
   return (
     <AnimatePresence>
       {open && (
-        <div className="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4">
+        // pointerEvents tracks the exit variant (not just opacity) so this overlay
+        // stops swallowing taps the instant it starts closing, rather than only
+        // after its ~200ms fade-out finishes — see the same fix in DashboardLayout.
+        <motion.div
+          className="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4"
+          initial={{ pointerEvents: "none" }}
+          animate={{ pointerEvents: "auto" }}
+          exit={{ pointerEvents: "none" }}
+        >
           <motion.div
             className="absolute inset-0 bg-brand-950/60 backdrop-blur-sm"
             onClick={onClose}
@@ -52,7 +60,7 @@ export function Modal({ open, onClose, title, children, maxWidth = "max-w-lg" }:
             </div>
             {children}
           </motion.div>
-        </div>
+        </motion.div>
       )}
     </AnimatePresence>
   );

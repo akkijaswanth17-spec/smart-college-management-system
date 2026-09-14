@@ -188,7 +188,16 @@ export function DashboardLayout({
       {/* Mobile drawer */}
       <AnimatePresence>
         {drawerOpen && (
-          <div className="fixed inset-0 z-50 lg:hidden">
+          // pointerEvents is switched via the animate/exit variants (not just the
+          // opacity fade) so that once you tap a nav link, this full-screen overlay
+          // stops swallowing taps immediately instead of only after its ~250ms
+          // close animation finishes — that gap was eating the next tap on mobile.
+          <motion.div
+            className="fixed inset-0 z-50 lg:hidden"
+            initial={{ pointerEvents: "none" }}
+            animate={{ pointerEvents: "auto" }}
+            exit={{ pointerEvents: "none" }}
+          >
             <motion.div
               className="absolute inset-0 bg-slate-900/50"
               onClick={() => setDrawerOpen(false)}
@@ -206,7 +215,7 @@ export function DashboardLayout({
             >
               {sidebarContent}
             </motion.aside>
-          </div>
+          </motion.div>
         )}
       </AnimatePresence>
 

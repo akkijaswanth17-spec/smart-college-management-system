@@ -19,11 +19,14 @@ export function NotificationBell() {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    function onClickOutside(e: MouseEvent) {
+    // pointerdown (not mousedown) — mousedown's synthetic mobile-tap equivalent
+    // can be delayed or skipped on some Android/Chrome versions, which left this
+    // dropdown stuck open until a second tap.
+    function onClickOutside(e: PointerEvent) {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     }
-    document.addEventListener("mousedown", onClickOutside);
-    return () => document.removeEventListener("mousedown", onClickOutside);
+    document.addEventListener("pointerdown", onClickOutside);
+    return () => document.removeEventListener("pointerdown", onClickOutside);
   }, []);
 
   return (
