@@ -1,6 +1,7 @@
 import * as XLSX from "xlsx";
 import { prisma } from "../config/prisma";
 import { RowError, ImportSummary } from "./import.service";
+import { ApiError } from "../utils/apiError";
 
 /** Reads an uploaded .xlsx/.xls/.csv buffer into normalized, lowercase-snake_case-keyed rows. */
 export function parseSpreadsheet(buffer: Buffer): Record<string, string>[] {
@@ -188,7 +189,7 @@ export async function importMarksWide(
   if (subjects.length === 0) {
     subjects = await prisma.subject.findMany({ where: { departmentId }, select: { id: true, name: true, code: true } });
   }
-  if (subjects.length === 0) throw new Error("This department has no subjects yet — add some under Timetable first");
+  if (subjects.length === 0) throw ApiError.badRequest("This department has no subjects yet — add some under Timetable first");
 
   const studentByRoll = new Map(students.map((s) => [s.studentId, s.id]));
 
@@ -207,8 +208,8 @@ export async function importMarksWide(
     else skippedColumns.push(header);
   }
   if (columnSubjectId.size === 0) {
-    throw new Error(
-      "None of the file's columns matched a subject for this class — expected one column per subject (e.g. AP, BDCC, IME)"
+    throw ApiError.badRequest(
+      `None of the file's columns matched a subject for this class — found columns: ${headerKeys.join(", ")}. Expected one column per subject (e.g. AP, BDCC, IME) matching this class's subjects: ${subjects.map((s) => s.name).join(", ")}`
     );
   }
   const matchedSubjects = subjects
