@@ -14,6 +14,10 @@ export interface ImportSummary {
   successRows: number;
   failedRows: number;
   errors: RowError[];
+  /** Marks sheet import only — which subject columns were actually found and used. */
+  matchedSubjects?: string[];
+  /** Marks sheet import only — file columns that didn't match any subject for this class, ignored. */
+  skippedColumns?: string[];
 }
 
 export function parseCsv(buffer: Buffer): Record<string, string>[] {

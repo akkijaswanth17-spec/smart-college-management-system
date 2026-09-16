@@ -194,18 +194,26 @@ export async function importMarksWide(
 
   // Resolve each file column to a subject exactly once, up front, so a header
   // that doesn't match anything is reported clearly instead of silently ignored.
+  // A subject with no matching column in the file (e.g. this exam didn't cover
+  // a lab subject) is simply left out — only the columns that ARE present get
+  // imported, nothing is required to be complete.
   const headerKeys = rows.length > 0 ? Object.keys(rows[0]) : [];
   const columnSubjectId = new Map<string, string>();
+  const skippedColumns: string[] = [];
   for (const header of headerKeys) {
     if (NON_SUBJECT_HEADERS.has(compactKey(header))) continue;
     const subjectId = matchSubjectColumn(header, subjects);
     if (subjectId) columnSubjectId.set(header, subjectId);
+    else skippedColumns.push(header);
   }
   if (columnSubjectId.size === 0) {
     throw new Error(
       "None of the file's columns matched a subject for this class — expected one column per subject (e.g. AP, BDCC, IME)"
     );
   }
+  const matchedSubjects = subjects
+    .filter((s) => Array.from(columnSubjectId.values()).includes(s.id))
+    .map((s) => s.name);
 
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i];
@@ -238,5 +246,5 @@ export async function importMarksWide(
     }
   }
 
-  return { totalRows: rows.length, successRows, failedRows: errors.length, errors };
+  return { totalRows: rows.length, successRows, failedRows: errors.length, errors, matchedSubjects, skippedColumns };
 }

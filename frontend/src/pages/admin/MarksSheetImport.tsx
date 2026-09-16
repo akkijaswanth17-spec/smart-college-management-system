@@ -144,6 +144,16 @@ export function MarksSheetImport() {
                 {summary.failedRows > 0 && <span className="ml-3 font-semibold text-red-600">{summary.failedRows} failed</span>}
                 <span className="ml-3 text-slate-400">of {summary.totalRows} rows</span>
               </p>
+              {summary.matchedSubjects && summary.matchedSubjects.length > 0 && (
+                <p className="mt-2 text-xs text-slate-500">
+                  <span className="font-semibold text-slate-700">Subjects imported:</span> {summary.matchedSubjects.join(", ")}
+                </p>
+              )}
+              {summary.skippedColumns && summary.skippedColumns.length > 0 && (
+                <p className="mt-1 text-xs text-amber-600">
+                  <span className="font-semibold">Columns ignored (no matching subject):</span> {summary.skippedColumns.join(", ")}
+                </p>
+              )}
               {summary.errors.length > 0 && (
                 <ul className="mt-2 max-h-40 space-y-1 overflow-y-auto text-xs text-red-600">
                   {summary.errors.map((e, i) => (
