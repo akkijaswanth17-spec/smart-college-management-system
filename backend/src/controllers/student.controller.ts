@@ -55,7 +55,9 @@ export const createStudent = asyncHandler(async (req: Request, res: Response) =>
 });
 
 export const listStudents = asyncHandler(async (req: Request, res: Response) => {
-  const { skip, take, page, pageSize } = getPagination(req);
+  // Admin's Student Management page shows every match in one page rather than
+  // paginating — a college-wide list stays comfortably under this cap.
+  const { skip, take, page, pageSize } = getPagination(req, 1000, 1000);
   const { search, year, section } = req.query;
   const departmentId = scopedDepartmentId(req, req.query.departmentId ? String(req.query.departmentId) : undefined);
 

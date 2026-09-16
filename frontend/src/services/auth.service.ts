@@ -19,6 +19,10 @@ export async function changePassword(currentPassword: string, newPassword: strin
   await api.post("/auth/change-password", { currentPassword, newPassword, confirmPassword });
 }
 
+export async function updateEmail(email: string) {
+  await api.put("/auth/email", { email });
+}
+
 export interface ForgotPasswordResult {
   emailSent: boolean;
   /** Only ever populated in development, when no email provider is configured yet. */

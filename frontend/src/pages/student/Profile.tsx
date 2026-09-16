@@ -9,11 +9,13 @@ import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../context/ToastContext";
 import { getErrorMessage } from "../../services/api";
 import { studentsService } from "../../services/students.service";
+import { updateEmail } from "../../services/auth.service";
 
 export default function StudentProfile() {
   const { user, refresh } = useAuth();
   const student = user?.student;
   const [phone, setPhone] = useState(student?.phone ?? "");
+  const [email, setEmail] = useState(user?.email ?? "");
   const [saving, setSaving] = useState(false);
   const toast = useToast();
 
@@ -23,7 +25,10 @@ export default function StudentProfile() {
     e.preventDefault();
     setSaving(true);
     try {
-      await studentsService.update(student!.id, { phone });
+      await Promise.all([
+        studentsService.update(student!.id, { phone }),
+        email !== user?.email ? updateEmail(email) : Promise.resolve(),
+      ]);
       toast.success("Profile updated");
       await refresh();
     } catch (err) {
@@ -63,8 +68,9 @@ export default function StudentProfile() {
                 <p className="font-medium text-slate-800">{student.section}</p>
               </div>
             </div>
-            <form onSubmit={handleSave} className="flex items-end gap-3 border-t border-slate-100 pt-4">
-              <div className="flex-1">
+            <form onSubmit={handleSave} className="space-y-4 border-t border-slate-100 pt-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Input label="Email Address" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
                 <Input label="Phone Number" value={phone} onChange={(e) => setPhone(e.target.value)} />
               </div>
               <Button type="submit" loading={saving}>

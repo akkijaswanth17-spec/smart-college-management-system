@@ -72,6 +72,17 @@ export async function changePassword(userId: string, currentPassword: string, ne
   });
 }
 
+/** Lets a signed-in user change their own login email — used to self-correct a wrong/placeholder address. */
+export async function updateEmail(userId: string, newEmail: string) {
+  const normalized = newEmail.trim().toLowerCase();
+
+  const existing = await prisma.user.findUnique({ where: { email: normalized } });
+  if (existing && existing.id !== userId) throw ApiError.conflict("An account with this email already exists");
+
+  const user = await prisma.user.update({ where: { id: userId }, data: { email: normalized } });
+  return serializeUser(user);
+}
+
 /**
  * Step 1 of "forgot password": issue a short-lived 6-digit code. Always
  * responds the same way whether or not the account exists, so the API

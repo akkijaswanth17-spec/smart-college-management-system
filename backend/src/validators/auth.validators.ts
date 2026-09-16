@@ -27,6 +27,12 @@ export const changePasswordSchema = z.object({
     }),
 });
 
+export const updateEmailSchema = z.object({
+  body: z.object({
+    email: z.string().trim().email(),
+  }),
+});
+
 export const forgotPasswordSchema = z.object({
   body: z.object({
     email: z.string().trim().email(),
