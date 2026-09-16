@@ -25,5 +25,6 @@ router.delete("/:id", controller.deleteMark);
 // Bulk Excel/CSV import stays admin-only for now (it resolves students/subjects
 // college-wide with no department check yet) — branch admins use the manual sheet above.
 router.post("/import", requireRole("ADMIN"), handleUpload(uploadImportFile), controller.importMarksFile);
+router.post("/import-sheet", handleUpload(uploadImportFile), controller.importMarksWideFile);
 
 export default router;

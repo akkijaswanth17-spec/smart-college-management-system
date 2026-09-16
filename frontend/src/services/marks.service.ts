@@ -10,6 +10,20 @@ export const marksService = {
     });
     return res.data.data;
   },
+  async importWide(
+    file: File,
+    params: { departmentId: string; year: number; section: string; examType: ExamType; academicYear: string }
+  ) {
+    const form = new FormData();
+    form.append("file", file);
+    form.append("departmentId", params.departmentId);
+    form.append("year", String(params.year));
+    form.append("section", params.section);
+    form.append("examType", params.examType);
+    form.append("academicYear", params.academicYear);
+    const res = await api.post<{ data: ImportSummary }>("/marks/import-sheet", form);
+    return res.data.data;
+  },
   async getMine() {
     const res = await api.get<{ data: MyMark[] }>("/marks/me");
     return res.data.data;

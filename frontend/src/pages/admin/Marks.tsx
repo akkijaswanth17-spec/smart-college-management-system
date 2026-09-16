@@ -4,8 +4,8 @@ import { Card } from "../../components/ui/Card";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { SkeletonTable } from "../../components/ui/Skeleton";
 import { ConfirmDialog } from "../../components/ui/ConfirmDialog";
-import { ImportCard } from "./DataImport";
 import { MarksSheetEditor } from "./MarksSheetEditor";
+import { MarksSheetImport } from "./MarksSheetImport";
 import { marksService } from "../../services/marks.service";
 import { useToast } from "../../context/ToastContext";
 import { getErrorMessage } from "../../services/api";
@@ -63,14 +63,7 @@ export default function AdminMarks() {
 
       <MarksSheetEditor />
 
-      <ImportCard
-        title="Import Marks from Excel"
-        icon={GraduationCap}
-        columns={["roll_number", "subject", "mid1", "mid2", "sem"]}
-        onImport={marksService.import}
-        templateHref="/import-templates/marks.csv"
-        accept=".csv,.xlsx,.xls"
-      />
+      <MarksSheetImport />
 
       <div>
         <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-slate-500">Imported Records</h2>

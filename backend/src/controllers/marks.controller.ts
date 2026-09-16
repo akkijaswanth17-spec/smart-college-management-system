@@ -3,7 +3,7 @@ import fs from "fs";
 import { asyncHandler } from "../utils/asyncHandler";
 import { ApiError } from "../utils/apiError";
 import { prisma } from "../config/prisma";
-import { parseSpreadsheet, importMarks } from "../services/marks.service";
+import { parseSpreadsheet, importMarks, importMarksWide } from "../services/marks.service";
 import { recordAudit } from "../services/audit.service";
 import { assertOwnBranch, scopedDepartmentId } from "../middleware/branchScope.middleware";
 
@@ -37,6 +37,65 @@ export const importMarksFile = asyncHandler(async (req: Request, res: Response) 
     targetType: "ImportBatch",
     targetId: batch.id,
     metadata: { successRows: summary.successRows, failedRows: summary.failedRows },
+  });
+
+  res.status(201).json({ success: true, data: { batchId: batch.id, ...summary } });
+});
+
+const EXAM_TYPES = new Set(["mid1", "mid2", "semester"]);
+
+// Imports a real class marks sheet exactly as the college already produces
+// it — S.No / PIN Number / Name / one column per subject — rather than the
+// generic long-format roll_number/subject/mid1/mid2/sem file above.
+export const importMarksWideFile = asyncHandler(async (req: Request, res: Response) => {
+  if (!req.file) throw ApiError.badRequest("An Excel or CSV file is required");
+
+  const { year, section, examType, academicYear } = req.body as Record<string, string | undefined>;
+  const departmentId = scopedDepartmentId(req, req.body.departmentId as string | undefined);
+
+  if (!departmentId) throw ApiError.badRequest("departmentId is required");
+  if (!year || Number.isNaN(Number(year))) throw ApiError.badRequest("A valid year is required");
+  if (!section?.trim()) throw ApiError.badRequest("section is required");
+  if (!examType || !EXAM_TYPES.has(examType)) throw ApiError.badRequest("A valid examType is required");
+  if (!academicYear?.trim()) throw ApiError.badRequest("academicYear is required");
+
+  const buffer = fs.readFileSync(req.file.path);
+  const rows = parseSpreadsheet(buffer);
+
+  if (rows.length === 0) throw ApiError.badRequest("The uploaded file has no data rows");
+  if (rows.length > 5000) throw ApiError.badRequest("Maximum 5000 rows per import");
+
+  const summary = await importMarksWide(
+    rows,
+    {
+      departmentId,
+      year: Number(year),
+      section: section.trim(),
+      examType: examType as "mid1" | "mid2" | "semester",
+      academicYear: academicYear.trim(),
+    },
+    req.user!.userId
+  );
+
+  const batch = await prisma.importBatch.create({
+    data: {
+      type: "MARKS",
+      fileName: req.file.originalname,
+      status: summary.failedRows === 0 ? "COMPLETED" : summary.successRows > 0 ? "COMPLETED_WITH_ERRORS" : "FAILED",
+      totalRows: summary.totalRows,
+      successRows: summary.successRows,
+      failedRows: summary.failedRows,
+      errors: summary.errors.length ? JSON.parse(JSON.stringify(summary.errors)) : undefined,
+      importedById: req.user!.userId,
+    },
+  });
+
+  await recordAudit({
+    userId: req.user!.userId,
+    action: "MARKS_IMPORTED",
+    targetType: "ImportBatch",
+    targetId: batch.id,
+    metadata: { successRows: summary.successRows, failedRows: summary.failedRows, examType, academicYear },
   });
 
   res.status(201).json({ success: true, data: { batchId: batch.id, ...summary } });
