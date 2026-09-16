@@ -3,23 +3,42 @@ import { prisma } from "../config/prisma";
 import { RowError, ImportSummary } from "./import.service";
 import { ApiError } from "../utils/apiError";
 
-/** Reads an uploaded .xlsx/.xls/.csv buffer into normalized, lowercase-snake_case-keyed rows. */
+/**
+ * Reads an uploaded .xlsx/.xls/.csv buffer into normalized, lowercase-snake_case-keyed
+ * rows. Real college sheets often have a title banner ("III Year CME A MID-I Marks
+ * Report") in row 1, sometimes a blank spacer row, and only THEN the actual column
+ * headers — treating row 1 as the header row in that case would misread the title as
+ * a single giant column name and everything else as "__empty". So the sheet is read
+ * as a raw grid first, and whichever row actually looks like a header row (contains a
+ * cell like "S.No", "PIN Number", "Roll Number" or "Name") is used instead.
+ */
 export function parseSpreadsheet(buffer: Buffer): Record<string, string>[] {
   const workbook = XLSX.read(buffer, { type: "buffer" });
   const sheetName = workbook.SheetNames[0];
   if (!sheetName) return [];
 
   const sheet = workbook.Sheets[sheetName];
-  const rawRows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: "", raw: false });
+  const grid = XLSX.utils.sheet_to_json<unknown[]>(sheet, { header: 1, defval: "", raw: false });
 
-  return rawRows.map((row) => {
-    const normalized: Record<string, string> = {};
-    for (const [key, value] of Object.entries(row)) {
-      const normalizedKey = key.trim().toLowerCase().replace(/\s+/g, "_");
-      normalized[normalizedKey] = String(value ?? "").trim();
-    }
-    return normalized;
-  });
+  const looksLikeHeaderRow = (row: unknown[]) =>
+    row.some((cell) => /^(s\.?\s?no|pin|roll|student|name)/i.test(String(cell).trim()));
+  const headerRowIndex = grid.findIndex(looksLikeHeaderRow);
+  const startRow = headerRowIndex === -1 ? 0 : headerRowIndex;
+
+  const headers = (grid[startRow] ?? []).map((h) => String(h).trim());
+
+  return grid
+    .slice(startRow + 1)
+    .filter((row) => row.some((cell) => String(cell).trim() !== ""))
+    .map((row) => {
+      const normalized: Record<string, string> = {};
+      headers.forEach((key, i) => {
+        if (!key) return;
+        const normalizedKey = key.toLowerCase().replace(/\s+/g, "_");
+        normalized[normalizedKey] = String(row[i] ?? "").trim();
+      });
+      return normalized;
+    });
 }
 
 function compactKey(key: string): string {
