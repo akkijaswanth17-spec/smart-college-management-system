@@ -180,8 +180,10 @@ export function DashboardLayout({
 
   return (
     <div className="flex min-h-screen bg-slate-50">
-      {/* Desktop sidebar */}
-      <aside className="hidden w-64 shrink-0 flex-col border-r border-slate-200 bg-white lg:flex">
+      {/* Desktop sidebar — sticky so it stays put while a long page (e.g. an
+          unpaginated student list) scrolls past it, instead of scrolling away
+          with the rest of the document. */}
+      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-slate-200 bg-white lg:flex">
         {sidebarContent}
       </aside>
 
