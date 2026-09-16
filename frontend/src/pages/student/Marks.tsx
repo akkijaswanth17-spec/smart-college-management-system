@@ -1,14 +1,18 @@
-import { useEffect, useMemo, useState } from "react";
-import { Search, GraduationCap } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Search, GraduationCap, FileDown, ImageDown } from "lucide-react";
 import { marksService } from "../../services/marks.service";
+import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../context/ToastContext";
 import { getErrorMessage } from "../../services/api";
 import { Card } from "../../components/ui/Card";
+import { Button } from "../../components/ui/Button";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { SkeletonTable } from "../../components/ui/Skeleton";
 import { SectionHeader } from "../../components/ui/SectionHeader";
 import { shortAcademicYear } from "../../utils/format";
-import { MyMark } from "../../types";
+import { getDisplayName } from "../../utils/displayName";
+import { generateStudentMarksPdf } from "../../utils/reportPdf";
+import { MyMark, MarksColumns, StudentMarksReportData } from "../../types";
 
 type ExamTab = "all" | "mid1" | "mid2" | "semester";
 
@@ -29,7 +33,11 @@ export default function StudentMarks() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [tab, setTab] = useState<ExamTab>("all");
+  const [exporting, setExporting] = useState<"pdf" | "image" | null>(null);
   const toast = useToast();
+  const { user } = useAuth();
+  const student = user?.student;
+  const tableRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     marksService
@@ -47,6 +55,61 @@ export default function StudentMarks() {
   }, [marks, search]);
 
   const tabLabel = TABS.find((t) => t.key === tab)?.label ?? "All";
+
+  // Reflects whatever's currently on screen — the search filter and the
+  // selected exam tab both narrow what actually lands in the download.
+  const exportColumns: MarksColumns =
+    tab === "all"
+      ? { mid1: true, mid2: true, semester: true }
+      : { mid1: tab === "mid1", mid2: tab === "mid2", semester: tab === "semester" };
+
+  function buildReportData(): StudentMarksReportData {
+    return {
+      studentId: student?.studentId ?? "",
+      fullName: student?.fullName ?? "",
+      department: student?.department?.name ?? "",
+      departmentCode: student?.department?.code ?? "",
+      year: student?.year ?? 0,
+      semester: student?.semester ?? null,
+      section: student?.section ?? "",
+      subjects: filtered.map((m) => ({
+        subject: m.subject.name,
+        code: m.subject.code,
+        mid1: m.mid1,
+        mid2: m.mid2,
+        semester: m.semester,
+        academicYear: m.academicYear,
+      })),
+    };
+  }
+
+  async function handleDownloadPdf() {
+    setExporting("pdf");
+    try {
+      await generateStudentMarksPdf(buildReportData(), getDisplayName(user), exportColumns);
+    } catch {
+      toast.error("Unable to generate the report. Please try again.");
+    } finally {
+      setExporting(null);
+    }
+  }
+
+  async function handleDownloadImage() {
+    if (!tableRef.current) return;
+    setExporting("image");
+    try {
+      const { default: html2canvas } = await import("html2canvas-pro");
+      const canvas = await html2canvas(tableRef.current, { backgroundColor: "#ffffff", scale: 2 });
+      const a = document.createElement("a");
+      a.href = canvas.toDataURL("image/png");
+      a.download = `Marks_${student?.studentId ?? "report"}.png`;
+      a.click();
+    } catch {
+      toast.error("Unable to generate the image. Please try again.");
+    } finally {
+      setExporting(null);
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -95,13 +158,23 @@ export default function StudentMarks() {
             <SectionHeader
               title={tab === "all" ? "Subject-wise Marks" : `${tabLabel} Marks`}
               action={
-                marks[0] ? (
-                  <span className="text-xs font-semibold text-slate-400">A.Y. {shortAcademicYear(marks[0].academicYear)}</span>
-                ) : undefined
+                <div className="flex items-center gap-3">
+                  {marks[0] && (
+                    <span className="text-xs font-semibold text-slate-400">A.Y. {shortAcademicYear(marks[0].academicYear)}</span>
+                  )}
+                  <div className="no-print flex gap-2">
+                    <Button variant="outline" size="sm" onClick={handleDownloadPdf} loading={exporting === "pdf"} disabled={exporting === "image"}>
+                      <FileDown className="h-3.5 w-3.5" /> PDF
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={handleDownloadImage} loading={exporting === "image"} disabled={exporting === "pdf"}>
+                      <ImageDown className="h-3.5 w-3.5" /> Image
+                    </Button>
+                  </div>
+                </div>
               }
             />
           </div>
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto" ref={tableRef}>
             <table className="w-full text-sm">
               <thead className="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                 <tr>
