@@ -7,6 +7,7 @@ import { Card } from "../../components/ui/Card";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { SkeletonTable } from "../../components/ui/Skeleton";
 import { SectionHeader } from "../../components/ui/SectionHeader";
+import { shortAcademicYear } from "../../utils/format";
 import { MyMark } from "../../types";
 
 type ExamTab = "all" | "mid1" | "mid2" | "semester";
@@ -91,7 +92,14 @@ export default function StudentMarks() {
       ) : (
         <Card className="overflow-hidden">
           <div className="border-b border-slate-100 px-5 py-4">
-            <SectionHeader title={tab === "all" ? "Subject-wise Marks" : `${tabLabel} Marks`} />
+            <SectionHeader
+              title={tab === "all" ? "Subject-wise Marks" : `${tabLabel} Marks`}
+              action={
+                marks[0] ? (
+                  <span className="text-xs font-semibold text-slate-400">A.Y. {shortAcademicYear(marks[0].academicYear)}</span>
+                ) : undefined
+              }
+            />
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -107,7 +115,6 @@ export default function StudentMarks() {
                   ) : (
                     <th className="px-5 py-3">{tabLabel}</th>
                   )}
-                  <th className="px-5 py-3">Academic Year</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -134,7 +141,6 @@ export default function StudentMarks() {
                         <ScoreCell value={tab === "mid1" ? m.mid1 : tab === "mid2" ? m.mid2 : m.semester} />
                       </td>
                     )}
-                    <td className="px-5 py-3 text-slate-500">{m.academicYear}</td>
                   </tr>
                 ))}
               </tbody>
