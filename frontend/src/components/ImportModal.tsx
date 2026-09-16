@@ -1,33 +1,41 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Users, GraduationCap, Upload, Download } from "lucide-react";
-import { Card, CardBody, CardHeader } from "../../components/ui/Card";
-import { Button } from "../../components/ui/Button";
-import { StaggerContainer, StaggerItem } from "../../components/motion/Stagger";
-import { useToast } from "../../context/ToastContext";
-import { getErrorMessage } from "../../services/api";
-import { importService } from "../../services/import.service";
-import { ImportSummary } from "../../types";
+import { Upload, Download } from "lucide-react";
+import { Modal } from "./ui/Modal";
+import { Button } from "./ui/Button";
+import { useToast } from "../context/ToastContext";
+import { getErrorMessage } from "../services/api";
+import { ImportSummary } from "../types";
 
-export function ImportCard({
+/** Bulk CSV import, reused as a modal from the Students and Faculty pages' own toolbars. */
+export function ImportModal({
+  open,
+  onClose,
   title,
-  icon: Icon,
   columns,
   onImport,
   templateHref,
-  accept = ".csv",
+  onImported,
 }: {
+  open: boolean;
+  onClose: () => void;
   title: string;
-  icon: typeof Users;
   columns: string[];
   onImport: (file: File) => Promise<ImportSummary>;
   templateHref: string;
-  accept?: string;
+  /** Called after a successful import so the caller can refresh its list. */
+  onImported?: () => void;
 }) {
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [summary, setSummary] = useState<ImportSummary | null>(null);
   const toast = useToast();
+
+  function handleClose() {
+    setFile(null);
+    setSummary(null);
+    onClose();
+  }
 
   async function handleUpload() {
     if (!file) return;
@@ -36,6 +44,7 @@ export function ImportCard({
       const result = await onImport(file);
       setSummary(result);
       toast.success(`Imported ${result.successRows} of ${result.totalRows} rows`);
+      if (result.successRows > 0) onImported?.();
     } catch (err) {
       toast.error(getErrorMessage(err));
     } finally {
@@ -44,24 +53,21 @@ export function ImportCard({
   }
 
   return (
-    <Card>
-      <CardHeader className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Icon className="h-4 w-4 text-brand-600" />
-          <h2 className="font-semibold text-slate-800">{title}</h2>
+    <Modal open={open} onClose={handleClose} title={title} maxWidth="max-w-xl">
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <p className="text-xs text-slate-500">
+            Required columns: <code className="rounded bg-slate-100 px-1.5 py-0.5">{columns.join(", ")}</code>
+          </p>
+          <a href={templateHref} download className="flex shrink-0 items-center gap-1 text-xs font-semibold text-brand-600 hover:text-brand-800">
+            <Download className="h-3.5 w-3.5" /> Template
+          </a>
         </div>
-        <a href={templateHref} download className="flex items-center gap-1 text-xs font-semibold text-brand-600 hover:text-brand-800">
-          <Download className="h-3.5 w-3.5" /> Template
-        </a>
-      </CardHeader>
-      <CardBody className="space-y-4">
-        <p className="text-xs text-slate-500">
-          Required columns: <code className="rounded bg-slate-100 px-1.5 py-0.5">{columns.join(", ")}</code>
-        </p>
+
         <div className="flex flex-wrap items-center gap-3">
           <input
             type="file"
-            accept={accept}
+            accept=".csv"
             onChange={(e) => setFile(e.target.files?.[0] ?? null)}
             className="block flex-1 text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-brand-50 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-brand-700 hover:file:bg-brand-100"
           />
@@ -69,6 +75,7 @@ export function ImportCard({
             <Upload className="h-4 w-4" /> Import
           </Button>
         </div>
+
         <AnimatePresence>
           {summary && (
             <motion.div
@@ -95,42 +102,7 @@ export function ImportCard({
             </motion.div>
           )}
         </AnimatePresence>
-      </CardBody>
-    </Card>
-  );
-}
-
-export default function AdminDataImport() {
-  return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-bold text-slate-900">Data Import</h1>
-        <p className="text-sm text-slate-500">
-          Bulk-import student and faculty accounts from CSV. Temporary passwords are generated automatically, hashed, and
-          each account is required to change its password on first login.
-        </p>
       </div>
-
-      <StaggerContainer className="grid gap-6 lg:grid-cols-2">
-        <StaggerItem>
-          <ImportCard
-            title="Import Students"
-            icon={Users}
-            columns={["name", "student_id", "email", "phone", "department", "year", "section"]}
-            onImport={importService.students}
-            templateHref="/import-templates/students.csv"
-          />
-        </StaggerItem>
-        <StaggerItem>
-          <ImportCard
-            title="Import Faculty"
-            icon={GraduationCap}
-            columns={["name", "faculty_id", "email", "phone", "department", "designation"]}
-            onImport={importService.faculty}
-            templateHref="/import-templates/faculty.csv"
-          />
-        </StaggerItem>
-      </StaggerContainer>
-    </div>
+    </Modal>
   );
 }

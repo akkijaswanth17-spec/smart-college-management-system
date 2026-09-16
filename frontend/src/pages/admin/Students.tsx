@@ -1,9 +1,11 @@
 import { useEffect, useState, FormEvent } from "react";
 import { motion } from "framer-motion";
-import { Search, Users, Pencil, Plus, Copy, Check, Trash2, IdCard } from "lucide-react";
+import { Search, Users, Pencil, Plus, Upload, Copy, Check, Trash2, IdCard } from "lucide-react";
 import { usePaginatedList } from "../../hooks/usePaginatedList";
 import { studentsService } from "../../services/students.service";
 import { metaService } from "../../services/meta.service";
+import { importService } from "../../services/import.service";
+import { ImportModal } from "../../components/ImportModal";
 import { Card } from "../../components/ui/Card";
 import { Badge } from "../../components/ui/Badge";
 import { Button } from "../../components/ui/Button";
@@ -38,6 +40,7 @@ export default function AdminStudents() {
   });
 
   const [createOpen, setCreateOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [createForm, setCreateForm] = useState(emptyCreateForm);
   const [manualPassword, setManualPassword] = useState(false);
   const [password, setPassword] = useState("");
@@ -145,9 +148,14 @@ export default function AdminStudents() {
           <h1 className="text-xl font-bold text-slate-900">Student Management</h1>
           <p className="text-sm text-slate-500">Create and manage student accounts. Students do not self-register.</p>
         </div>
-        <Button onClick={() => setCreateOpen(true)}>
-          <Plus className="h-4 w-4" /> Add Student
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setImportOpen(true)}>
+            <Upload className="h-4 w-4" /> Import Students
+          </Button>
+          <Button onClick={() => setCreateOpen(true)}>
+            <Plus className="h-4 w-4" /> Add Student
+          </Button>
+        </div>
       </div>
 
       <div className="relative max-w-sm">
@@ -398,6 +406,16 @@ export default function AdminStudents() {
         loading={deleting}
         onConfirm={handleDelete}
         onCancel={() => setDeleteTarget(null)}
+      />
+
+      <ImportModal
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        title="Import Students"
+        columns={["name", "student_id", "email", "phone", "department", "year", "section"]}
+        onImport={importService.students}
+        templateHref="/import-templates/students.csv"
+        onImported={reload}
       />
     </div>
   );

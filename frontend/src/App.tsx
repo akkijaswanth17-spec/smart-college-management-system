@@ -52,7 +52,6 @@ import AdminLostFound from "./pages/admin/LostFound";
 import AdminWhatsAppGroups from "./pages/admin/WhatsAppGroups";
 import AdminWhatsAppRequests from "./pages/admin/WhatsAppRequests";
 import AdminLinksSettings from "./pages/admin/LinksSettings";
-import AdminDataImport from "./pages/admin/DataImport";
 import AdminMarks from "./pages/admin/Marks";
 import AdminAuditLogs from "./pages/admin/AuditLogs";
 import AdminProfile from "./pages/admin/Profile";
@@ -128,7 +127,6 @@ export default function App() {
                 <Route path="whatsapp-groups" element={<AdminWhatsAppGroups />} />
                 <Route path="whatsapp-requests" element={<AdminWhatsAppRequests />} />
                 <Route path="settings" element={<AdminLinksSettings />} />
-                <Route path="import" element={<AdminDataImport />} />
                 <Route path="marks" element={<AdminMarks />} />
                 <Route path="promotions" element={<AdminPromotions />} />
                 <Route path="branch-accounts" element={<AdminBranchAccounts />} />
