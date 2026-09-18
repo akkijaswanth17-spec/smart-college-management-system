@@ -174,7 +174,28 @@ export default function StudentMarks() {
               }
             />
           </div>
-          <div className="overflow-x-auto" ref={tableRef}>
+          <div ref={tableRef} className="bg-white">
+            <dl className="grid grid-cols-2 gap-x-6 gap-y-2 border-b border-slate-100 px-5 py-4 text-sm sm:grid-cols-4">
+              <div>
+                <dt className="text-slate-400">Student Name</dt>
+                <dd className="font-semibold text-brand-950">{student?.fullName}</dd>
+              </div>
+              <div>
+                <dt className="text-slate-400">Roll Number</dt>
+                <dd className="font-semibold text-brand-950">{student?.studentId}</dd>
+              </div>
+              <div>
+                <dt className="text-slate-400">Department</dt>
+                <dd className="font-semibold text-brand-950">{student?.department?.name}</dd>
+              </div>
+              <div>
+                <dt className="text-slate-400">Year / Section</dt>
+                <dd className="font-semibold text-brand-950">
+                  Year {student?.year} - {student?.section}
+                </dd>
+              </div>
+            </dl>
+            <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                 <tr>

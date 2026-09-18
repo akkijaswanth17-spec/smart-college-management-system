@@ -10,8 +10,9 @@ import { env } from "../config/env";
 const RESET_CODE_TTL_MINUTES = 10;
 
 /**
- * `identifier` may be an email address (any role) or a student's Roll
- * Number / Student ID — students can sign in with either.
+ * `identifier` may be an email address (any role), a student's Roll Number
+ * / Student ID, a faculty member's Faculty ID, or a branch admin's Branch
+ * ID — each role can sign in with either their email or their own ID.
  */
 export async function login(identifier: string, password: string) {
   const trimmed = identifier.trim();
@@ -30,7 +31,13 @@ export async function login(identifier: string, password: string) {
         include,
       })
     : await prisma.user.findFirst({
-        where: { student: { studentId: trimmed } },
+        where: {
+          OR: [
+            { student: { studentId: trimmed } },
+            { faculty: { facultyId: trimmed } },
+            { branchAdmin: { branchId: trimmed } },
+          ],
+        },
         include,
       });
 

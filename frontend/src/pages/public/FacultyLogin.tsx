@@ -8,7 +8,11 @@ import { LoginForm } from "../../components/LoginForm";
 export default function FacultyLogin() {
   return (
     <AuthLayout title="Faculty Sign In" subtitle="Access your timetable, notices and student records.">
-      <LoginForm expectedRole="FACULTY" dashboardPath="/faculty/dashboard" />
+      <LoginForm
+        expectedRole="FACULTY"
+        dashboardPath="/faculty/dashboard"
+        altId={{ label: "Email or Faculty ID", placeholder: "you@college.edu or FAC001" }}
+      />
     </AuthLayout>
   );
 }

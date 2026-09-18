@@ -9,7 +9,11 @@ import { LoginForm } from "../../components/LoginForm";
 export default function BranchLogin() {
   return (
     <AuthLayout title="Branch Sign In" subtitle="Manage students, faculty, timetable and marks for your department.">
-      <LoginForm expectedRole="BRANCH" dashboardPath="/branch/dashboard" />
+      <LoginForm
+        expectedRole="BRANCH"
+        dashboardPath="/branch/dashboard"
+        altId={{ label: "Email or Branch ID", placeholder: "you@college.edu or BR001" }}
+      />
     </AuthLayout>
   );
 }

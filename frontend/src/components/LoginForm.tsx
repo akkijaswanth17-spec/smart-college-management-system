@@ -12,11 +12,11 @@ import { Role } from "../types";
 interface LoginFormProps {
   expectedRole: Role;
   dashboardPath: string;
-  /** Students may sign in with either their email or their Roll Number / Student ID. */
-  allowRollNumber?: boolean;
+  /** Lets this role sign in with either their email or their own ID (Student/Faculty/Branch ID). */
+  altId?: { label: string; placeholder: string };
 }
 
-export function LoginForm({ expectedRole, dashboardPath, allowRollNumber }: LoginFormProps) {
+export function LoginForm({ expectedRole, dashboardPath, altId }: LoginFormProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -71,13 +71,13 @@ export function LoginForm({ expectedRole, dashboardPath, allowRollNumber }: Logi
         )}
       </AnimatePresence>
       <Input
-        label={allowRollNumber ? "Email or Roll Number" : "Email address"}
-        type={allowRollNumber ? "text" : "email"}
+        label={altId ? altId.label : "Email address"}
+        type={altId ? "text" : "email"}
         required
         autoComplete="username"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
-        placeholder={allowRollNumber ? "you@college.edu or STU001" : "you@college.edu"}
+        placeholder={altId ? altId.placeholder : "you@college.edu"}
       />
       <div className="relative">
         <Input
