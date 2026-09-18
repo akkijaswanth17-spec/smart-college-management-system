@@ -23,7 +23,13 @@ export default function ForceChangePassword() {
   async function handleSuccess() {
     await refresh();
     const dashboard =
-      user?.role === "ADMIN" ? "/admin/dashboard" : user?.role === "FACULTY" ? "/faculty/dashboard" : "/student/dashboard";
+      user?.role === "ADMIN"
+        ? "/admin/dashboard"
+        : user?.role === "FACULTY"
+          ? "/faculty/dashboard"
+          : user?.role === "BRANCH"
+            ? "/branch/students"
+            : "/student/dashboard";
     navigate(dashboard, { replace: true });
   }
 
