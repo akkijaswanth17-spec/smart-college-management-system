@@ -3,7 +3,6 @@ import { motion } from "framer-motion";
 import { Search, Users, Pencil, Plus, Upload, Copy, Check, Trash2, IdCard } from "lucide-react";
 import { usePaginatedList } from "../../hooks/usePaginatedList";
 import { studentsService } from "../../services/students.service";
-import { metaService } from "../../services/meta.service";
 import { importService } from "../../services/import.service";
 import { ImportModal } from "../../components/ImportModal";
 import { Card } from "../../components/ui/Card";
@@ -18,8 +17,9 @@ import { useToast } from "../../context/ToastContext";
 import { getErrorMessage } from "../../services/api";
 import { PersonAvatar } from "../../components/ui/Avatar";
 import { PasswordOptionField } from "../../components/PasswordOptionField";
-import { StudentProfile, Department } from "../../types";
+import { StudentProfile } from "../../types";
 import { CLASS_OPTIONS, SECTION_OPTIONS, classKeyFor } from "../../constants/academicClass";
+import { useDepartmentOptions } from "../../hooks/useDepartmentOptions";
 
 const emptyCreateForm = {
   fullName: "",
@@ -33,7 +33,7 @@ const emptyCreateForm = {
 
 export default function AdminStudents() {
   const [search, setSearch] = useState("");
-  const [departments, setDepartments] = useState<Department[]>([]);
+  const departments = useDepartmentOptions();
   // Every match loads in one page — see listStudents on the backend for the raised cap.
   const { items, loading, reload } = usePaginatedList<StudentProfile>(studentsService.list, {
     search: search || undefined,
@@ -63,10 +63,6 @@ export default function AdminStudents() {
   const [deleteTarget, setDeleteTarget] = useState<StudentProfile | null>(null);
   const [deleting, setDeleting] = useState(false);
   const toast = useToast();
-
-  useEffect(() => {
-    metaService.departments().then(setDepartments).catch(() => setDepartments([]));
-  }, []);
 
   async function handleCreate(e: FormEvent) {
     e.preventDefault();

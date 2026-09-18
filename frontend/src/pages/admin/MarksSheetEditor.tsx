@@ -5,12 +5,12 @@ import { Button } from "../../components/ui/Button";
 import { Select } from "../../components/ui/FormField";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { SkeletonTable } from "../../components/ui/Skeleton";
-import { metaService } from "../../services/meta.service";
 import { marksService } from "../../services/marks.service";
 import { useToast } from "../../context/ToastContext";
 import { getErrorMessage } from "../../services/api";
-import { Department, MarksSheetSubject, MarksSheetRow, ExamType } from "../../types";
+import { MarksSheetSubject, MarksSheetRow, ExamType } from "../../types";
 import { CLASS_OPTIONS, SECTION_OPTIONS, ACADEMIC_YEAR_OPTIONS } from "../../constants/academicClass";
+import { useDepartmentOptions } from "../../hooks/useDepartmentOptions";
 
 const currentAcademicYear = `${new Date().getFullYear()}-${new Date().getFullYear() + 1}`;
 
@@ -79,7 +79,7 @@ function ScoreInput({
 }
 
 export function MarksSheetEditor() {
-  const [departments, setDepartments] = useState<Department[]>([]);
+  const departments = useDepartmentOptions();
   const [departmentId, setDepartmentId] = useState("");
   const [classKey, setClassKey] = useState(CLASS_OPTIONS[0].key);
   const year = CLASS_OPTIONS.find((o) => o.key === classKey)!.year;
@@ -97,9 +97,11 @@ export function MarksSheetEditor() {
   const toast = useToast();
   const exportRef = useRef<HTMLDivElement>(null);
 
+  // A Branch account only ever has one department to pick from — select it
+  // automatically instead of leaving a one-option dropdown to click through.
   useEffect(() => {
-    metaService.departments().then(setDepartments);
-  }, []);
+    if (departments.length === 1 && !departmentId) setDepartmentId(departments[0].id);
+  }, [departments, departmentId]);
 
   const canLoad = departmentId && year && section.trim();
 

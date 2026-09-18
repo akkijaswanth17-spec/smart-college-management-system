@@ -13,6 +13,7 @@ import { EmptyState } from "../../components/ui/EmptyState";
 import { SkeletonTimetable } from "../../components/ui/Skeleton";
 import { WeeklyTimetableGrid } from "../../components/WeeklyTimetableGrid";
 import { useToast } from "../../context/ToastContext";
+import { useAuth } from "../../context/AuthContext";
 import { getErrorMessage } from "../../services/api";
 import { DAYS_OF_WEEK } from "../../utils/format";
 import { TimetableEntry, Department, Subject, Room, Block, FacultyProfile } from "../../types";
@@ -59,6 +60,7 @@ export default function AdminTimetable() {
   const [deleteTarget, setDeleteTarget] = useState<TimetableEntry | null>(null);
   const [deleting, setDeleting] = useState(false);
   const toast = useToast();
+  const { user } = useAuth();
 
   async function loadEntries() {
     setLoading(true);
@@ -82,14 +84,18 @@ export default function AdminTimetable() {
   useEffect(() => {
     Promise.all([metaService.departments(), metaService.subjects(), metaService.blocks(), metaService.rooms(), facultyService.list({ pageSize: 200 })]).then(
       ([d, s, b, r, f]) => {
-        setDepartments(d);
+        // A Branch account manages only its own department, so it must never
+        // even see other departments as a filter/create option — the backend
+        // already force-scopes every query, but the picker has to match that.
+        setDepartments(user?.role === "BRANCH" ? d.filter((dep) => dep.id === user.branchAdmin?.departmentId) : d);
         setSubjects(s);
         setBlocks(b);
         setRooms(r);
         setFaculty(f.data);
       }
     );
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   function openCreate() {
     setEditing(null);

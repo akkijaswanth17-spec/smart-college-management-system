@@ -3,7 +3,6 @@ import { motion } from "framer-motion";
 import { Search, GraduationCap, Plus, Pencil, KeyRound, Power, Upload, Copy, Check, Trash2, IdCard } from "lucide-react";
 import { usePaginatedList } from "../../hooks/usePaginatedList";
 import { facultyService } from "../../services/faculty.service";
-import { metaService } from "../../services/meta.service";
 import { importService } from "../../services/import.service";
 import { ImportModal } from "../../components/ImportModal";
 import { Card } from "../../components/ui/Card";
@@ -19,13 +18,14 @@ import { useToast } from "../../context/ToastContext";
 import { getErrorMessage } from "../../services/api";
 import { PersonAvatar } from "../../components/ui/Avatar";
 import { PasswordOptionField } from "../../components/PasswordOptionField";
-import { FacultyProfile, Department } from "../../types";
+import { FacultyProfile } from "../../types";
+import { useDepartmentOptions } from "../../hooks/useDepartmentOptions";
 
 const emptyCreateForm = { fullName: "", title: "", facultyId: "", email: "", phone: "", departmentId: "", designation: "" };
 
 export default function AdminFaculty() {
   const [search, setSearch] = useState("");
-  const [departments, setDepartments] = useState<Department[]>([]);
+  const departments = useDepartmentOptions();
   const { items, meta, page, setPage, loading, reload } = usePaginatedList<FacultyProfile>(facultyService.list, {
     search: search || undefined,
   });
@@ -49,10 +49,6 @@ export default function AdminFaculty() {
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const toast = useToast();
-
-  useEffect(() => {
-    metaService.departments().then(setDepartments).catch(() => setDepartments([]));
-  }, []);
 
   async function handleCreate(e: FormEvent) {
     e.preventDefault();

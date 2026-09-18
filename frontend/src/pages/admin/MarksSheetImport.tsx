@@ -4,12 +4,12 @@ import { FileSpreadsheet, Upload } from "lucide-react";
 import { Card, CardHeader, CardBody } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import { Select } from "../../components/ui/FormField";
-import { metaService } from "../../services/meta.service";
 import { marksService } from "../../services/marks.service";
 import { useToast } from "../../context/ToastContext";
 import { getErrorMessage } from "../../services/api";
-import { Department, ExamType, ImportSummary } from "../../types";
+import { ExamType, ImportSummary } from "../../types";
 import { CLASS_OPTIONS, SECTION_OPTIONS, ACADEMIC_YEAR_OPTIONS } from "../../constants/academicClass";
+import { useDepartmentOptions } from "../../hooks/useDepartmentOptions";
 
 const currentAcademicYear = `${new Date().getFullYear()}-${new Date().getFullYear() + 1}`;
 
@@ -25,7 +25,7 @@ const EXAM_OPTIONS: { value: ExamType; label: string }[] = [
  * of requiring it be reshaped into a roll_number/subject/mid1/mid2/sem file.
  */
 export function MarksSheetImport() {
-  const [departments, setDepartments] = useState<Department[]>([]);
+  const departments = useDepartmentOptions();
   const [departmentId, setDepartmentId] = useState("");
   const [classKey, setClassKey] = useState(CLASS_OPTIONS[0].key);
   const year = CLASS_OPTIONS.find((o) => o.key === classKey)!.year;
@@ -39,9 +39,11 @@ export function MarksSheetImport() {
   const [summary, setSummary] = useState<ImportSummary | null>(null);
   const toast = useToast();
 
+  // A Branch account only ever has one department to pick from — select it
+  // automatically instead of leaving a one-option dropdown to click through.
   useEffect(() => {
-    metaService.departments().then(setDepartments);
-  }, []);
+    if (departments.length === 1 && !departmentId) setDepartmentId(departments[0].id);
+  }, [departments, departmentId]);
 
   const canImport = departmentId && section.trim() && file;
 
