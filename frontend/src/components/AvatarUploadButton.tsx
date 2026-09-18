@@ -1,11 +1,11 @@
 import { useRef, useState, ChangeEvent } from "react";
 import { Plus, Loader2, X } from "lucide-react";
 import { PersonAvatar } from "./ui/Avatar";
+import { AvatarCropModal } from "./AvatarCropModal";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
 import { uploadAvatar } from "../services/auth.service";
 import { getErrorMessage } from "../services/api";
-import { compressImage } from "../utils/compressImage";
 
 /**
  * Profile photo — clicking the photo itself opens a full-size preview; the small "+"
@@ -25,18 +25,23 @@ export function AvatarUploadButton({
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [cropFile, setCropFile] = useState<File | null>(null);
 
-  async function handleFile(e: ChangeEvent<HTMLInputElement>) {
+  function handleFile(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
+    // No fixed crop can center every photo's face — a close-up selfie and a
+    // full-body shot need completely different crops — so the person picks
+    // their own crop here instead of the app guessing one.
+    setCropFile(file);
+  }
+
+  async function handleCropConfirm(blob: Blob) {
+    setCropFile(null);
     setUploading(true);
     try {
-      // Phone camera photos are routinely several MB at full resolution — shrink
-      // client-side before upload so they reliably fit the server's size limit
-      // and don't bloat every future page load with a huge embedded image.
-      const compressed = await compressImage(file);
-      const updated = await uploadAvatar(compressed);
+      const updated = await uploadAvatar(blob);
       setUser(updated);
       toast.success("Profile photo updated");
     } catch (err) {
@@ -102,6 +107,8 @@ export function AvatarUploadButton({
           />
         </div>
       )}
+
+      {cropFile && <AvatarCropModal file={cropFile} onCancel={() => setCropFile(null)} onConfirm={handleCropConfirm} />}
     </>
   );
 }
