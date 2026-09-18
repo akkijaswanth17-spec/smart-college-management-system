@@ -25,30 +25,43 @@ export async function login(identifier: string, password: string) {
     branchAdmin: { include: { department: true } },
   };
 
-  const user = isEmail
-    ? await prisma.user.findUnique({
-        where: { email: trimmed.toLowerCase() },
-        include,
-      })
-    : await prisma.user.findFirst({
-        where: {
-          OR: [
-            { student: { studentId: trimmed } },
-            { faculty: { facultyId: trimmed } },
-            { branchAdmin: { branchId: trimmed } },
-          ],
-        },
-        include,
-      });
+  if (isEmail) {
+    const user = await prisma.user.findUnique({ where: { email: trimmed.toLowerCase() }, include });
+    if (!user) throw ApiError.unauthorized("Invalid email or password");
+    if (!user.isActive) throw ApiError.forbidden("This account has been deactivated. Contact the administrator.");
 
-  if (!user) throw ApiError.unauthorized("Invalid email or password");
-  if (!user.isActive) throw ApiError.forbidden("This account has been deactivated. Contact the administrator.");
+    const valid = await comparePassword(password, user.passwordHash);
+    if (!valid) throw ApiError.unauthorized("Invalid email or password");
 
-  const valid = await comparePassword(password, user.passwordHash);
-  if (!valid) throw ApiError.unauthorized("Invalid email or password");
+    const token = signToken({ userId: user.id, role: user.role });
+    return { token, user: serializeUser(user) };
+  }
 
-  const token = signToken({ userId: user.id, role: user.role });
-  return { token, user: serializeUser(user) };
+  // A person can hold more than one account under the same ID — a faculty
+  // member who is also their department's branch admin uses the same
+  // numeric ID for both, distinguished only by which account's password is
+  // entered. Every account that ID could refer to is fetched, and the
+  // password (never query order) decides which one this login is for.
+  const candidates = await prisma.user.findMany({
+    where: {
+      OR: [
+        { student: { studentId: trimmed } },
+        { faculty: { facultyId: trimmed } },
+        { branchAdmin: { branchId: trimmed } },
+      ],
+    },
+    include,
+  });
+
+  for (const candidate of candidates) {
+    if (!candidate.isActive) continue;
+    if (await comparePassword(password, candidate.passwordHash)) {
+      const token = signToken({ userId: candidate.id, role: candidate.role });
+      return { token, user: serializeUser(candidate) };
+    }
+  }
+
+  throw ApiError.unauthorized("Invalid email or password");
 }
 
 export async function getMe(userId: string) {
