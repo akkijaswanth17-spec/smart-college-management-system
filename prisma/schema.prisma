@@ -112,6 +112,12 @@ enum ImportStatus {
   FAILED
 }
 
+enum StudyMaterialType {
+  ASSIGNMENT
+  NOTES
+  QUESTION_BANK
+}
+
 // ============================================================
 // CORE USER / ROLE MODELS
 // ============================================================
@@ -138,6 +144,7 @@ model User {
   createdUpdates    AcademicUpdate[] @relation("UpdateCreatedBy")
   createdLostFound  LostFoundItem[]  @relation("LostFoundCreatedBy")
   moderatedLostFound LostFoundItem[] @relation("LostFoundModeratedBy")
+  uploadedMaterials StudyMaterial[]  @relation("StudyMaterialUploadedBy")
   updatedSettings   Setting[]
   passwordResetCodes PasswordResetCode[]
   pushSubscriptions PushSubscription[]
@@ -273,6 +280,8 @@ model Department {
   updates      AcademicUpdate[]
   timetables   TimetableEntry[]
   branchAdmin  BranchAdmin?
+  notices      Notice[]
+  materials    StudyMaterial[]
 
   @@map("departments")
 }
@@ -350,14 +359,42 @@ model Notice {
   expiryDate    DateTime?      @map("expiry_date")
   attachmentUrl String?        @map("attachment_url")
   isPublished   Boolean        @default(false) @map("is_published")
+  // Null = college-wide (Admin only can create these). A Branch account can
+  // only ever create/manage notices with its own departmentId — see
+  // branchScope.middleware.ts's scopedDepartmentId/assertOwnBranch.
+  departmentId  String?        @map("department_id")
   createdById   String         @map("created_by_id")
   createdAt     DateTime       @default(now()) @map("created_at")
   updatedAt     DateTime       @updatedAt @map("updated_at")
 
-  createdBy User @relation("NoticeCreatedBy", fields: [createdById], references: [id])
+  createdBy  User        @relation("NoticeCreatedBy", fields: [createdById], references: [id])
+  department Department? @relation(fields: [departmentId], references: [id])
 
   @@index([isPublished, category])
+  @@index([departmentId])
   @@map("notices")
+}
+
+// ============================================================
+// STUDY MATERIALS (Branch-uploaded assignments/notes/question banks —
+// visible only to students in the same department)
+// ============================================================
+
+model StudyMaterial {
+  id           String            @id @default(cuid())
+  title        String
+  type         StudyMaterialType
+  departmentId String            @map("department_id")
+  fileUrl      String            @map("file_url")
+  fileName     String            @map("file_name")
+  uploadedById String            @map("uploaded_by_id")
+  createdAt    DateTime          @default(now()) @map("created_at")
+
+  department Department @relation(fields: [departmentId], references: [id])
+  uploadedBy User       @relation("StudyMaterialUploadedBy", fields: [uploadedById], references: [id])
+
+  @@index([departmentId, type])
+  @@map("study_materials")
 }
 
 // ============================================================

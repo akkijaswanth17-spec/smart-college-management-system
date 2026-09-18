@@ -25,6 +25,7 @@ import StudentLostFound from "./pages/student/LostFound";
 import StudentFees from "./pages/student/Fees";
 import StudentResults from "./pages/student/Results";
 import StudentMarks from "./pages/student/Marks";
+import StudentStudyMaterials from "./pages/student/StudyMaterials";
 import StudentWhatsApp from "./pages/student/WhatsApp";
 import StudentNotifications from "./pages/student/Notifications";
 import StudentProfile from "./pages/student/Profile";
@@ -58,6 +59,7 @@ import AdminProfile from "./pages/admin/Profile";
 import AdminBranchAccounts from "./pages/admin/BranchAccounts";
 import AdminReports from "./pages/admin/Reports";
 import AdminPromotions from "./pages/admin/Promotions";
+import AdminStudyMaterials from "./pages/admin/StudyMaterials";
 
 import BranchDashboardLayout from "./layouts/BranchDashboardLayout";
 
@@ -90,6 +92,7 @@ export default function App() {
                 <Route path="fees" element={<StudentFees />} />
                 <Route path="results" element={<StudentResults />} />
                 <Route path="marks" element={<StudentMarks />} />
+                <Route path="study-materials" element={<StudentStudyMaterials />} />
                 <Route path="whatsapp" element={<StudentWhatsApp />} />
                 <Route path="notifications" element={<StudentNotifications />} />
                 <Route path="profile" element={<StudentProfile />} />
@@ -129,6 +132,7 @@ export default function App() {
                 <Route path="settings" element={<AdminLinksSettings />} />
                 <Route path="marks" element={<AdminMarks />} />
                 <Route path="promotions" element={<AdminPromotions />} />
+                <Route path="study-materials" element={<AdminStudyMaterials />} />
                 <Route path="branch-accounts" element={<AdminBranchAccounts />} />
                 <Route path="reports" element={<AdminReports />} />
                 <Route path="audit-logs" element={<AdminAuditLogs />} />
@@ -145,6 +149,8 @@ export default function App() {
                 <Route path="timetable" element={<AdminTimetable />} />
                 <Route path="marks" element={<AdminMarks />} />
                 <Route path="promotions" element={<AdminPromotions />} />
+                <Route path="notices" element={<AdminNotices />} />
+                <Route path="study-materials" element={<AdminStudyMaterials />} />
                 <Route path="reports" element={<AdminReports />} />
               </Route>
             </Route>

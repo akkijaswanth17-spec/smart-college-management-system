@@ -20,6 +20,9 @@ export const createNoticeSchema = z.object({
     publishedDate: z.coerce.date().optional(),
     expiryDate: z.coerce.date().optional(),
     isPublished: z.coerce.boolean().optional().default(false),
+    // Ignored for a BRANCH caller (forced to their own department server-side) —
+    // optional here so Admin may still post a college-wide notice by omitting it.
+    departmentId: z.string().optional(),
   }),
 });
 
@@ -32,6 +35,7 @@ export const updateNoticeSchema = z.object({
     publishedDate: z.coerce.date().optional(),
     expiryDate: z.coerce.date().optional(),
     isPublished: z.coerce.boolean().optional(),
+    departmentId: z.string().optional(),
   }),
   params: z.object({ id: z.string() }),
 });

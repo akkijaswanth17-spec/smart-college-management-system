@@ -208,6 +208,7 @@ export function NoticesPage({ canManage }: { canManage: boolean }) {
                   <div className="mb-2 flex flex-wrap items-center gap-1.5">
                     <Badge tone={PRIORITY_TONE[notice.priority]}>{titleCase(notice.priority)}</Badge>
                     <Badge tone="slate">{titleCase(notice.category)}</Badge>
+                    {notice.department && <Badge tone="brand">{notice.department.code}</Badge>}
                     {canManage && !notice.isPublished && <Badge tone="amber">Draft</Badge>}
                   </div>
                   <h3 className="font-serif text-base font-bold text-slate-900">{notice.title}</h3>

@@ -13,6 +13,18 @@ const ALLOWED_IMPORT_TYPES = new Set([
   "application/vnd.ms-excel",
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
 ]);
+const ALLOWED_STUDY_MATERIAL_TYPES = new Set([
+  ...ALLOWED_DOC_TYPES,
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.ms-powerpoint",
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "application/zip",
+  "application/x-zip-compressed",
+  "text/plain",
+]);
 
 function ensureDir(dir: string) {
   fs.mkdirSync(dir, { recursive: true });
@@ -96,6 +108,12 @@ export const uploadImportFile = multer({
   storage: makeStorage("imports"),
   fileFilter: fileFilterFor(ALLOWED_IMPORT_TYPES),
   limits: { fileSize: 10 * 1024 * 1024 },
+}).single("file");
+
+export const uploadStudyMaterial = multer({
+  storage: makeStorage("materials"),
+  fileFilter: fileFilterFor(ALLOWED_STUDY_MATERIAL_TYPES),
+  limits: { fileSize: 20 * 1024 * 1024 },
 }).single("file");
 
 export function multerErrorToApiError(err: unknown): ApiError {

@@ -1,5 +1,5 @@
 import { Outlet } from "react-router-dom";
-import { Users, GraduationCap, CalendarDays, FileSpreadsheet, BarChart3, TrendingUp } from "lucide-react";
+import { Users, GraduationCap, CalendarDays, FileSpreadsheet, BarChart3, TrendingUp, Megaphone, FolderOpen } from "lucide-react";
 import { DashboardLayout, NavItem } from "./DashboardLayout";
 
 const navItems: NavItem[] = [
@@ -8,6 +8,8 @@ const navItems: NavItem[] = [
   { label: "Timetable", to: "/branch/timetable", icon: CalendarDays },
   { label: "Marks", to: "/branch/marks", icon: FileSpreadsheet },
   { label: "Promotions", to: "/branch/promotions", icon: TrendingUp },
+  { label: "Notices", to: "/branch/notices", icon: Megaphone },
+  { label: "Study Materials", to: "/branch/study-materials", icon: FolderOpen },
   { label: "Reports", to: "/branch/reports", icon: BarChart3 },
 ];
 

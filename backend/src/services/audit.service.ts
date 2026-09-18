@@ -38,7 +38,9 @@ export type AuditAction =
   | "USER_DEACTIVATED"
   | "USER_ACTIVATED"
   | "SETTING_UPDATED"
-  | "STUDENTS_PROMOTED";
+  | "STUDENTS_PROMOTED"
+  | "STUDY_MATERIAL_UPLOADED"
+  | "STUDY_MATERIAL_DELETED";
 
 interface AuditParams {
   userId?: string;

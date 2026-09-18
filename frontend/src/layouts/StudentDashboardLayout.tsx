@@ -11,6 +11,7 @@ import {
   User,
   CalendarDays,
   ClipboardList,
+  FolderOpen,
 } from "lucide-react";
 import { DashboardLayout, NavItem } from "./DashboardLayout";
 
@@ -19,6 +20,7 @@ const navItems: NavItem[] = [
   { label: "Timetable", to: "/student/timetable", icon: CalendarDays },
   { label: "Notices", to: "/student/notices", icon: Megaphone },
   { label: "Academic Updates", to: "/student/academic-updates", icon: BookOpen },
+  { label: "Study Materials", to: "/student/study-materials", icon: FolderOpen },
   { label: "Lost & Found", to: "/student/lost-found", icon: Search },
   { label: "Fee Payment", to: "/student/fees", icon: CreditCard },
   { label: "Results", to: "/student/results", icon: GraduationCap },

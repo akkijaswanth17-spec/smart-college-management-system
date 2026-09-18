@@ -108,6 +108,23 @@ export interface Notice {
   attachmentUrl: string | null;
   isPublished: boolean;
   createdAt: string;
+  /** Null = college-wide (Admin). Set = only that department can see it. */
+  departmentId?: string | null;
+  department?: { id: string; name: string; code: string } | null;
+}
+
+export type StudyMaterialType = "ASSIGNMENT" | "NOTES" | "QUESTION_BANK";
+
+export interface StudyMaterial {
+  id: string;
+  title: string;
+  type: StudyMaterialType;
+  departmentId: string;
+  department?: { id: string; name: string; code: string } | null;
+  fileUrl: string;
+  fileName: string;
+  uploadedBy?: { id: string; email: string } | null;
+  createdAt: string;
 }
 
 export type AcademicUpdateCategory =
