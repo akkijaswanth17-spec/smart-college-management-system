@@ -12,7 +12,7 @@ export default function BranchLogin() {
       <LoginForm
         expectedRole="BRANCH"
         dashboardPath="/branch/dashboard"
-        altId={{ label: "Email or Branch ID", placeholder: "you@college.edu or BR001" }}
+        altId={{ label: "Email or Branch ID", placeholder: "you@college.edu or your Branch ID" }}
       />
     </AuthLayout>
   );

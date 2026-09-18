@@ -11,7 +11,7 @@ export default function FacultyLogin() {
       <LoginForm
         expectedRole="FACULTY"
         dashboardPath="/faculty/dashboard"
-        altId={{ label: "Email or Faculty ID", placeholder: "you@college.edu or FAC001" }}
+        altId={{ label: "Email or Faculty ID", placeholder: "you@college.edu or your Faculty ID" }}
       />
     </AuthLayout>
   );
