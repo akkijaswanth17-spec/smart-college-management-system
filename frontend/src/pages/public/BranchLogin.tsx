@@ -11,7 +11,7 @@ export default function BranchLogin() {
     <AuthLayout title="Branch Sign In" subtitle="Manage students, faculty, timetable and marks for your department.">
       <LoginForm
         expectedRole="BRANCH"
-        dashboardPath="/branch/dashboard"
+        dashboardPath="/branch/students"
         altId={{ label: "Email or Branch ID", placeholder: "you@college.edu or your Branch ID" }}
       />
     </AuthLayout>
