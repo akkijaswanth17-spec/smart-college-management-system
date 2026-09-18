@@ -239,6 +239,7 @@ export default function StudentMarks() {
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         </Card>
       )}
