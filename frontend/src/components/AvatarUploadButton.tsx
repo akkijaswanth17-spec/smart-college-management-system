@@ -1,4 +1,5 @@
 import { useRef, useState, ChangeEvent } from "react";
+import { createPortal } from "react-dom";
 import { Plus, Loader2, X } from "lucide-react";
 import { PersonAvatar } from "./ui/Avatar";
 import { AvatarCropModal } from "./AvatarCropModal";
@@ -86,27 +87,30 @@ export function AvatarUploadButton({
         />
       </div>
 
-      {previewOpen && user?.avatarUrl && (
-        <div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-brand-950/80 p-4 backdrop-blur-sm"
-          onClick={() => setPreviewOpen(false)}
-        >
-          <button
-            type="button"
+      {previewOpen &&
+        user?.avatarUrl &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-brand-950/80 p-4 backdrop-blur-sm"
             onClick={() => setPreviewOpen(false)}
-            className="absolute right-4 top-4 rounded-full bg-white/10 p-2 text-white transition-colors hover:bg-white/20"
-            aria-label="Close"
           >
-            <X className="h-5 w-5" />
-          </button>
-          <img
-            src={user.avatarUrl}
-            alt="Profile photo"
-            className="max-h-[85vh] max-w-[90vw] rounded-2xl object-contain shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          />
-        </div>
-      )}
+            <button
+              type="button"
+              onClick={() => setPreviewOpen(false)}
+              className="absolute right-4 top-4 rounded-full bg-white/10 p-2 text-white transition-colors hover:bg-white/20"
+              aria-label="Close"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            <img
+              src={user.avatarUrl}
+              alt="Profile photo"
+              className="max-h-[85vh] max-w-[90vw] rounded-2xl object-contain shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>,
+          document.body
+        )}
 
       {cropFile && <AvatarCropModal file={cropFile} onCancel={() => setCropFile(null)} onConfirm={handleCropConfirm} />}
     </>

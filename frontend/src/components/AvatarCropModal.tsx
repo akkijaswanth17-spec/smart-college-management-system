@@ -1,23 +1,22 @@
-import { useEffect, useMemo, useRef, useState, PointerEvent as ReactPointerEvent, WheelEvent } from "react";
+import { useEffect, useMemo, useRef, useState, PointerEvent as ReactPointerEvent } from "react";
+import { createPortal } from "react-dom";
 import { Check, X } from "lucide-react";
 import { Button } from "./ui/Button";
 
 const VIEWPORT = 280;
 const EXPORT_SIZE = 512;
-const MIN_ZOOM = 1;
-const MAX_ZOOM = 3;
 
 /**
  * No fixed CSS crop position (object-top, object-center, ...) can work for
  * every uploaded photo — a close-up selfie and a full-body shot with the
  * face taking up 15% of the frame need completely different crops. Instead
- * of guessing, this lets the person drag/zoom their own photo so their face
- * ends up inside the circular guide before it's ever uploaded — the crop
- * that's confirmed here is exactly what gets saved as the avatar.
+ * of guessing, this lets the person drag their own photo so their face ends
+ * up inside the circular guide before it's ever uploaded — the crop
+ * confirmed here is exactly what gets saved as the avatar. No zoom control —
+ * scaling the image up past its own resolution just made it look blurry.
  */
 export function AvatarCropModal({ file, onCancel, onConfirm }: { file: File; onCancel: () => void; onConfirm: (blob: Blob) => void }) {
   const [bitmap, setBitmap] = useState<ImageBitmap | null>(null);
-  const [zoom, setZoom] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [exporting, setExporting] = useState(false);
   const dragRef = useRef<{ startX: number; startY: number; startOffset: { x: number; y: number } } | null>(null);
@@ -42,27 +41,26 @@ export function AvatarCropModal({ file, onCancel, onConfirm }: { file: File; onC
     };
   }, [file]);
 
-  // Scale at which the image's SHORTER side exactly covers the square viewport.
-  const baseScale = useMemo(() => {
+  // The scale at which the image's SHORTER side exactly covers the square
+  // viewport — fixed, never scaled up further, so the photo is never shown
+  // above its own native resolution (that's what read as "stretched").
+  const scale = useMemo(() => {
     if (!bitmap) return 1;
     return VIEWPORT / Math.min(bitmap.width, bitmap.height);
   }, [bitmap]);
 
-  const scale = baseScale * zoom;
-
-  function clampOffset(next: { x: number; y: number }, currentScale: number) {
+  function clampOffset(next: { x: number; y: number }) {
     if (!bitmap) return next;
-    const halfW = (bitmap.width * currentScale) / 2;
-    const halfH = (bitmap.height * currentScale) / 2;
+    const halfW = (bitmap.width * scale) / 2;
+    const halfH = (bitmap.height * scale) / 2;
     const maxX = Math.max(0, halfW - VIEWPORT / 2);
     const maxY = Math.max(0, halfH - VIEWPORT / 2);
     return { x: Math.min(maxX, Math.max(-maxX, next.x)), y: Math.min(maxY, Math.max(-maxY, next.y)) };
   }
 
   useEffect(() => {
-    setOffset((prev) => clampOffset(prev, scale));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scale, bitmap]);
+    setOffset({ x: 0, y: 0 });
+  }, [bitmap]);
 
   function handlePointerDown(e: ReactPointerEvent<HTMLDivElement>) {
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
@@ -73,16 +71,11 @@ export function AvatarCropModal({ file, onCancel, onConfirm }: { file: File; onC
     if (!dragRef.current) return;
     const dx = e.clientX - dragRef.current.startX;
     const dy = e.clientY - dragRef.current.startY;
-    setOffset(clampOffset({ x: dragRef.current.startOffset.x + dx, y: dragRef.current.startOffset.y + dy }, scale));
+    setOffset(clampOffset({ x: dragRef.current.startOffset.x + dx, y: dragRef.current.startOffset.y + dy }));
   }
 
   function handlePointerUp() {
     dragRef.current = null;
-  }
-
-  function handleWheel(e: WheelEvent<HTMLDivElement>) {
-    e.preventDefault();
-    setZoom((z) => Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, z - e.deltaY * 0.0015)));
   }
 
   async function handleConfirm() {
@@ -109,7 +102,7 @@ export function AvatarCropModal({ file, onCancel, onConfirm }: { file: File; onC
     }
   }
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-brand-950/80 p-4 backdrop-blur-sm">
       <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-2xl">
         <div className="mb-3 flex items-center justify-between">
@@ -118,7 +111,7 @@ export function AvatarCropModal({ file, onCancel, onConfirm }: { file: File; onC
             <X className="h-4.5 w-4.5" />
           </button>
         </div>
-        <p className="mb-4 text-sm text-slate-500">Drag to reposition, scroll or use the slider to zoom, so your face sits inside the circle.</p>
+        <p className="mb-4 text-sm text-slate-500">Drag the photo so your face sits inside the circle.</p>
 
         <div
           className="relative mx-auto touch-none select-none overflow-hidden rounded-xl bg-slate-900"
@@ -127,7 +120,6 @@ export function AvatarCropModal({ file, onCancel, onConfirm }: { file: File; onC
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
           onPointerLeave={handlePointerUp}
-          onWheel={handleWheel}
         >
           {bitmap && objectUrl && (
             <img
@@ -151,18 +143,7 @@ export function AvatarCropModal({ file, onCancel, onConfirm }: { file: File; onC
           />
         </div>
 
-        <input
-          type="range"
-          min={MIN_ZOOM}
-          max={MAX_ZOOM}
-          step={0.01}
-          value={zoom}
-          onChange={(e) => setZoom(Number(e.target.value))}
-          className="mt-4 w-full accent-brand-700"
-          aria-label="Zoom"
-        />
-
-        <div className="mt-4 flex justify-end gap-3">
+        <div className="mt-5 flex justify-end gap-3">
           <Button type="button" variant="outline" onClick={onCancel}>
             Cancel
           </Button>
@@ -171,6 +152,7 @@ export function AvatarCropModal({ file, onCancel, onConfirm }: { file: File; onC
           </Button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

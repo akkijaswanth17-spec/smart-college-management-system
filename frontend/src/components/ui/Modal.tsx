@@ -1,4 +1,5 @@
 import { ReactNode, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
 
@@ -22,7 +23,11 @@ export function Modal({ open, onClose, title, children, maxWidth = "max-w-lg" }:
     };
   }, [open, onClose]);
 
-  return (
+  // A page-content ancestor (PageTransition) animates a transform, which
+  // makes descendant `position: fixed` elements relative to that ancestor's
+  // box instead of the real viewport — a portal escapes it so the overlay is
+  // always positioned against the actual browser window, not page content.
+  return createPortal(
     <AnimatePresence>
       {open && (
         // pointerEvents tracks the exit variant (not just opacity) so this overlay
@@ -62,6 +67,7 @@ export function Modal({ open, onClose, title, children, maxWidth = "max-w-lg" }:
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }
