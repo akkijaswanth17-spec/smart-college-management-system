@@ -13,6 +13,7 @@ import { useToast } from "../../context/ToastContext";
 import { getErrorMessage } from "../../services/api";
 import { formatDate, titleCase } from "../../utils/format";
 import { studyMaterialsService } from "../../services/studyMaterials.service";
+import { useDepartmentOptions } from "../../hooks/useDepartmentOptions";
 import { StudyMaterial, StudyMaterialType } from "../../types";
 
 const TYPES: { value: StudyMaterialType; label: string }[] = [
@@ -27,12 +28,13 @@ const TYPE_TONE: Record<StudyMaterialType, "brand" | "gold" | "green"> = {
   QUESTION_BANK: "green",
 };
 
-const emptyForm = { title: "", type: "ASSIGNMENT" as StudyMaterialType };
+const emptyForm = { title: "", type: "ASSIGNMENT" as StudyMaterialType, departmentId: "" };
 
 export function StudyMaterialsPage({ canManage }: { canManage: boolean }) {
   const [type, setType] = useState<StudyMaterialType | "">("");
   const [items, setItems] = useState<StudyMaterial[]>([]);
   const [loading, setLoading] = useState(true);
+  const departments = useDepartmentOptions();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
@@ -41,6 +43,12 @@ export function StudyMaterialsPage({ canManage }: { canManage: boolean }) {
   const [deleteTarget, setDeleteTarget] = useState<StudyMaterial | null>(null);
   const [deleting, setDeleting] = useState(false);
   const toast = useToast();
+
+  // A Branch account only ever has one department to pick from — select it
+  // automatically instead of leaving a one-option dropdown to click through.
+  useEffect(() => {
+    if (departments.length === 1 && !form.departmentId) setForm((f) => ({ ...f, departmentId: departments[0].id }));
+  }, [departments, form.departmentId]);
 
   async function reload() {
     setLoading(true);
@@ -67,10 +75,10 @@ export function StudyMaterialsPage({ canManage }: { canManage: boolean }) {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!file) return;
+    if (!file || !form.departmentId) return;
     setSaving(true);
     try {
-      await studyMaterialsService.upload({ title: form.title, type: form.type, file });
+      await studyMaterialsService.upload({ title: form.title, type: form.type, file, departmentId: form.departmentId });
       toast.success("Material uploaded");
       setModalOpen(false);
       reload();
@@ -195,13 +203,23 @@ export function StudyMaterialsPage({ canManage }: { canManage: boolean }) {
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title="Upload Material">
         <form onSubmit={handleSubmit} className="space-y-4">
           <Input label="Title" required value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
-          <Select label="Type" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value as StudyMaterialType })}>
-            {TYPES.map((t) => (
-              <option key={t.value} value={t.value}>
-                {t.label}
-              </option>
-            ))}
-          </Select>
+          <div className="grid grid-cols-2 gap-4">
+            <Select label="Department" required value={form.departmentId} onChange={(e) => setForm({ ...form, departmentId: e.target.value })}>
+              <option value="">Select</option>
+              {departments.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.name}
+                </option>
+              ))}
+            </Select>
+            <Select label="Type" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value as StudyMaterialType })}>
+              {TYPES.map((t) => (
+                <option key={t.value} value={t.value}>
+                  {t.label}
+                </option>
+              ))}
+            </Select>
+          </div>
           <div>
             <label className="mb-1.5 block text-sm font-medium text-slate-700">File</label>
             <input
@@ -216,7 +234,7 @@ export function StudyMaterialsPage({ canManage }: { canManage: boolean }) {
             <Button type="button" variant="outline" onClick={() => setModalOpen(false)}>
               Cancel
             </Button>
-            <Button type="submit" loading={saving} disabled={!file}>
+            <Button type="submit" loading={saving} disabled={!file || !form.departmentId}>
               Upload
             </Button>
           </div>
