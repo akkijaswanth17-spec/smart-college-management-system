@@ -188,6 +188,23 @@ function sectionFromSheetName(sheetName: string): string | undefined {
   return undefined;
 }
 
+interface PreparedStudentRow {
+  lineNo: number;
+  name: string;
+  studentId: string;
+  email: string;
+  phone: string;
+  year: number;
+  section: string;
+  departmentId: string;
+  password: string;
+}
+
+// A large sheet (100+ rows) doing 3-4 sequential DB round trips per row — one at a
+// time, awaited — is slow enough to time out the request before it ever finishes.
+// This resolves every row's fields first (cheap, no per-row DB calls beyond a
+// department-text cache), batch-checks for existing emails/Roll Numbers in two
+// queries total, then creates the accounts in small concurrent batches.
 export async function importStudents(
   rows: Record<string, string>[],
   importedById: string,
@@ -201,6 +218,9 @@ export async function importStudents(
     prisma.department.findMany(),
   ]);
   const deptByCode = new Map(allDepts.map((d) => [d.code.toUpperCase(), d]));
+  const deptTextCache = new Map<string, Awaited<ReturnType<typeof findOrCreateDepartment>>>();
+
+  const prepared: PreparedStudentRow[] = [];
 
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i];
@@ -219,7 +239,7 @@ export async function importStudents(
       // Last-resort fallback for a multi-sheet workbook when a row's own Roll No
       // doesn't carry a recognizable branch code — try the sheet tab's name too.
       const sheetDept = row._sheet_name ? departmentFromSheetName(row._sheet_name, deptByCode) : undefined;
-      const department = row.department?.trim();
+      const departmentText = row.department?.trim();
       const year = row.year?.trim() ? parseInt(row.year, 10) : defaults.year;
       // A, B, C... or I, II, III... in the row's own column, then the picked default,
       // then — for a multi-sheet workbook — a letter/numeral pulled from the tab name.
@@ -231,7 +251,18 @@ export async function importStudents(
         (row._sheet_name ? sectionFromSheetName(row._sheet_name) : undefined) ??
         "A";
 
-      if (!rollNoDept && !department && !defaultDept && !sheetDept) {
+      // The Roll Number's own branch code always wins over a sheet's department
+      // column or tab name — it's the ground truth for which branch a student is in.
+      let dept = rollNoDept;
+      if (!dept && departmentText) {
+        if (!deptTextCache.has(departmentText)) {
+          deptTextCache.set(departmentText, await findOrCreateDepartment(departmentText));
+        }
+        dept = deptTextCache.get(departmentText);
+      }
+      dept = dept ?? defaultDept ?? sheetDept ?? undefined;
+
+      if (!dept) {
         throw new Error("No department column in the sheet and none selected before importing");
       }
       if (year === undefined || Number.isNaN(year)) {
@@ -240,39 +271,68 @@ export async function importStudents(
 
       const email = row.email?.trim().toLowerCase() || placeholderEmail(studentId);
       const phone = row.phone?.trim() || "";
-
-      const [existingEmail, existingStudentId] = await Promise.all([
-        prisma.user.findUnique({ where: { email } }),
-        prisma.student.findUnique({ where: { studentId } }),
-      ]);
-      if (existingEmail) throw new Error(`Email ${email} already registered`);
-      if (existingStudentId) throw new Error(`Student ID ${studentId} already registered`);
-
-      // The Roll Number's own branch code always wins over a sheet's department
-      // column or tab name — it's the ground truth for which branch a student is in.
-      const dept = rollNoDept ?? (department ? await findOrCreateDepartment(department) : (defaultDept ?? sheetDept)!);
       // Defaults to the student's own Roll Number when the sheet doesn't specify one.
-      const tempPassword = row.password?.trim() || studentId;
-      const passwordHash = await hashPassword(tempPassword);
+      const password = row.password?.trim() || studentId;
 
-      await prisma.user.create({
-        data: {
-          email,
-          passwordHash,
-          role: "STUDENT",
-          mustChangePassword: true,
-          student: {
-            create: { fullName: name, studentId, phone, departmentId: dept.id, year, section },
-          },
-        },
-      });
-
-      successRows += 1;
+      prepared.push({ lineNo, name, studentId, email, phone, year, section, departmentId: dept.id, password });
     } catch (err) {
       errors.push({ row: lineNo, message: err instanceof Error ? err.message : "Unknown error" });
     }
   }
 
+  const [existingEmails, existingStudentIds] = await Promise.all([
+    prisma.user.findMany({ where: { email: { in: prepared.map((p) => p.email) } }, select: { email: true } }),
+    prisma.student.findMany({ where: { studentId: { in: prepared.map((p) => p.studentId) } }, select: { studentId: true } }),
+  ]);
+  const existingEmailSet = new Set(existingEmails.map((u) => u.email));
+  const existingStudentIdSet = new Set(existingStudentIds.map((s) => s.studentId));
+
+  const seenEmails = new Set<string>();
+  const seenStudentIds = new Set<string>();
+  const toCreate: PreparedStudentRow[] = [];
+  for (const p of prepared) {
+    if (existingEmailSet.has(p.email)) {
+      errors.push({ row: p.lineNo, message: `Email ${p.email} already registered` });
+    } else if (existingStudentIdSet.has(p.studentId)) {
+      errors.push({ row: p.lineNo, message: `Student ID ${p.studentId} already registered` });
+    } else if (seenEmails.has(p.email) || seenStudentIds.has(p.studentId)) {
+      errors.push({ row: p.lineNo, message: `Duplicate Roll No ${p.studentId} elsewhere in this file` });
+    } else {
+      seenEmails.add(p.email);
+      seenStudentIds.add(p.studentId);
+      toCreate.push(p);
+    }
+  }
+
+  const CONCURRENCY = 15;
+  for (let i = 0; i < toCreate.length; i += CONCURRENCY) {
+    const batch = toCreate.slice(i, i + CONCURRENCY);
+    const results = await Promise.allSettled(
+      batch.map(async (p) => {
+        const passwordHash = await hashPassword(p.password);
+        await prisma.user.create({
+          data: {
+            email: p.email,
+            passwordHash,
+            role: "STUDENT",
+            mustChangePassword: true,
+            student: {
+              create: { fullName: p.name, studentId: p.studentId, phone: p.phone, departmentId: p.departmentId, year: p.year, section: p.section },
+            },
+          },
+        });
+      })
+    );
+    results.forEach((result, idx) => {
+      if (result.status === "fulfilled") {
+        successRows += 1;
+      } else {
+        errors.push({ row: batch[idx].lineNo, message: result.reason instanceof Error ? result.reason.message : "Unknown error" });
+      }
+    });
+  }
+
+  errors.sort((a, b) => a.row - b.row);
   return { totalRows: rows.length, successRows, failedRows: errors.length, errors };
 }
 
