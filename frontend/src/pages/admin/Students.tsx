@@ -446,6 +446,7 @@ export default function AdminStudents() {
                 ))}
               </Select>
               <Select label="Section" value={importSection} onChange={(e) => setImportSection(e.target.value)}>
+                <option value="ALL">All (detect per sheet/row)</option>
                 {SECTION_OPTIONS.map((s) => (
                   <option key={s} value={s}>
                     {s}
@@ -455,8 +456,10 @@ export default function AdminStudents() {
             </div>
             <p className="text-xs text-slate-500">
               Each student's own Roll No decides their department first — CM → DCME, EC → ECE, EE → EEE, ME/M →
-              Mechanical, CE → Civil, AM → AIML. The Department picker above is only a fallback for roll numbers that
-              don't carry a branch code{importDepartmentId === "ALL" ? " (and for those, each sheet tab's name is matched to a department instead)" : ""}.
+              Mechanical, CE → Civil, AM → AIML. The Department picker is only a fallback for roll numbers that don't
+              carry a branch code{importDepartmentId === "ALL" ? " (and for those, each sheet tab's name is matched to a department instead)" : ""}.
+              For Section, "All" reads a section column (A/B/C/D or I/II/III/IV both work) or, for a multi-sheet file,
+              the letter/numeral in the sheet's tab name — e.g. a tab named "III Year DCME II" is read as Section B.
             </p>
           </div>
         }

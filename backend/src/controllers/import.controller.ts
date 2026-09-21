@@ -58,10 +58,10 @@ export const importStudentsCsv = asyncHandler((req: Request, res: Response) => {
 
   let rows: Record<string, string>[];
   if (departmentId === "ALL") {
-    // One sheet per branch — each row's department comes from its sheet's tab name
-    // (e.g. a tab named "AIML" or "CSE") unless the row already has its own column.
+    // One sheet per branch — each row's department/section can be read off its
+    // sheet's tab name (e.g. "III Year DCME II") as a fallback, see import.service.ts.
     const groups = parseImportFileGrouped(buffer, req.file.originalname);
-    rows = groups.flatMap((g) => g.rows.map((r) => ({ ...r, department: r.department || g.sheetName })));
+    rows = groups.flatMap((g) => g.rows.map((r) => ({ ...r, _sheet_name: g.sheetName })));
   } else {
     rows = parseImportFile(buffer, req.file.originalname);
   }
@@ -69,7 +69,7 @@ export const importStudentsCsv = asyncHandler((req: Request, res: Response) => {
   const defaults = {
     departmentId: departmentId && departmentId !== "ALL" ? departmentId : undefined,
     year: year ? Number(year) : undefined,
-    section: section || undefined,
+    section: section && section !== "ALL" ? section : undefined,
   };
   return runImport(req, res, "STUDENTS", rows, req.file.originalname, (r, userId) => importStudents(r, userId, defaults));
 });

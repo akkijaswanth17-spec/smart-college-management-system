@@ -120,6 +120,31 @@ function departmentCodeFromRollNo(rollNo: string): string | undefined {
   return undefined;
 }
 
+// A section is sometimes written as a plain letter (A, B, C, D) and sometimes as a
+// Roman numeral (I, II, III, IV) — both mean the same thing.
+const ROMAN_TO_SECTION_LETTER: Record<string, string> = { I: "A", II: "B", III: "C", IV: "D", V: "E", VI: "F" };
+
+function normalizeSectionValue(raw?: string): string | undefined {
+  const value = raw?.trim().toUpperCase();
+  if (!value) return undefined;
+  return ROMAN_TO_SECTION_LETTER[value] ?? value;
+}
+
+/** Pulls a section letter out of a sheet tab name like "III Year DCME II" — skipping
+ * the Roman numeral right before "Year"/"Yr", since that one is the year, not the section. */
+function sectionFromSheetName(sheetName: string): string | undefined {
+  const tokens = sheetName.toUpperCase().match(/[A-Z]+/g) ?? [];
+  for (let i = 0; i < tokens.length; i++) {
+    const token = tokens[i];
+    const next = tokens[i + 1];
+    const isYearRoman = (next === "YEAR" || next === "YR") && !!ROMAN_TO_SECTION_LETTER[token];
+    if (isYearRoman) continue;
+    const normalized = normalizeSectionValue(token);
+    if (normalized && /^[A-F]$/.test(normalized)) return normalized;
+  }
+  return undefined;
+}
+
 export async function importStudents(
   rows: Record<string, string>[],
   importedById: string,
@@ -150,7 +175,10 @@ export async function importStudents(
       const rollNoDept = rollNoBranchCode ? deptByCode.get(rollNoBranchCode) : undefined;
       const department = row.department?.trim();
       const year = row.year?.trim() ? parseInt(row.year, 10) : defaults.year;
-      const section = row.section?.trim() || defaults.section;
+      // A, B, C... or I, II, III... in the row's own column, then the picked default,
+      // then — for a multi-sheet workbook — a letter/numeral pulled from the tab name.
+      const section =
+        normalizeSectionValue(row.section) ?? defaults.section ?? (row._sheet_name ? sectionFromSheetName(row._sheet_name) : undefined);
 
       if (!rollNoDept && !department && !defaultDept) {
         throw new Error("No department column in the sheet and none selected before importing");
