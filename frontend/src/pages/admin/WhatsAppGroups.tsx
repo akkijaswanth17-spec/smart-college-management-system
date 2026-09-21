@@ -165,10 +165,10 @@ export default function AdminWhatsAppGroups() {
 
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title="New WhatsApp Group">
         <form onSubmit={handleSubmit} className="space-y-4">
-          <Input label="Group Name" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="CSE 2nd Year Section A" />
+          <Input label="Group Name" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="DCME 2nd Year Section A" />
           <Input label="Subject" required value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} placeholder="Database Management Systems" />
           <div className="grid grid-cols-3 gap-4">
-            <Input label="Department" value={form.department} onChange={(e) => setForm({ ...form, department: e.target.value })} placeholder="CSE" />
+            <Input label="Department" value={form.department} onChange={(e) => setForm({ ...form, department: e.target.value })} placeholder="DCME" />
             <Input label="Year" type="number" value={form.year} onChange={(e) => setForm({ ...form, year: e.target.value })} />
             <Input label="Section" value={form.section} onChange={(e) => setForm({ ...form, section: e.target.value.toUpperCase() })} />
           </div>
