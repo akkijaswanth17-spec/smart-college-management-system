@@ -16,6 +16,16 @@ export interface FeedbackReportParams {
 }
 
 export const feedbackService = {
+  // Module on/off switch
+  async getEnabled() {
+    const res = await api.get<{ data: { enabled: boolean } }>("/feedback/enabled");
+    return res.data.data.enabled;
+  },
+  async setEnabled(enabled: boolean) {
+    const res = await api.put<{ data: { enabled: boolean } }>("/feedback/enabled", { enabled });
+    return res.data.data.enabled;
+  },
+
   // Admin — question bank
   async listQuestions() {
     const res = await api.get<{ data: FeedbackQuestion[] }>("/feedback/questions");

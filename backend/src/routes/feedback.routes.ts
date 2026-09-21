@@ -11,11 +11,16 @@ import {
   feedbackReportQuerySchema,
   feedbackFacultyDetailQuerySchema,
   publishFeedbackSchema,
+  updateFeedbackEnabledSchema,
 } from "../validators/feedback.validators";
 
 const router = Router();
 
 router.use(authenticate);
+
+// Module on/off switch — Admin decides whether Students can see/use it at all.
+router.get("/enabled", controller.getFeedbackEnabled);
+router.put("/enabled", requireRole("ADMIN"), validate(updateFeedbackEnabledSchema), controller.updateFeedbackEnabled);
 
 // Questions — Admin manages the bank; any authenticated caller (Student, in
 // practice) can fetch just the active ones to render the feedback form.

@@ -113,6 +113,7 @@ export default function StudentDashboard() {
   const [updates, setUpdates] = useState<AcademicUpdate[]>([]);
   const [noticesTotal, setNoticesTotal] = useState(0);
   const [pendingRequests, setPendingRequests] = useState(0);
+  const [feedbackEnabled, setFeedbackEnabled] = useState(false);
   const [feedbackTargetCount, setFeedbackTargetCount] = useState(0);
   const [feedbackPendingCount, setFeedbackPendingCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -133,14 +134,16 @@ export default function StudentDashboard() {
       academicUpdatesService.list({ pageSize: 5, departmentId: student?.departmentId }),
       whatsappService.myRequests(),
       feedbackService.myTargets(),
+      feedbackService.getEnabled(),
     ])
-      .then(([n, u, r, f]) => {
+      .then(([n, u, r, f, enabled]) => {
         setNotices(n.data);
         setNoticesTotal(n.meta.total);
         setUpdates(u.data);
         setPendingRequests(r.filter((req) => req.status === "PENDING").length);
         setFeedbackTargetCount(f.targets.length);
         setFeedbackPendingCount(f.pendingCount);
+        setFeedbackEnabled(enabled);
       })
       .finally(() => setLoading(false));
   }, [student?.departmentId]);
@@ -189,7 +192,7 @@ export default function StudentDashboard() {
       <div className="grid gap-6 lg:grid-cols-12">
         <div className="space-y-6 lg:col-span-8">
           {/* Faculty Feedback prompt */}
-          {!loading && (
+          {!loading && feedbackEnabled && (
             <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-gold-200 bg-gold-50 px-5 py-4">
               <div className="flex items-start gap-3">
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-gold-600 shadow-sm">

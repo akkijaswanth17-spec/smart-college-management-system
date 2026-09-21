@@ -7,6 +7,33 @@ import { recordAudit } from "../services/audit.service";
 const currentAcademicYear = () => `${new Date().getFullYear()}-${new Date().getFullYear() + 1}`;
 
 // ============================================================
+// Module on/off switch — Admin controls whether Students can see and
+// use Faculty Feedback at all. Off by default until Admin turns it on.
+// ============================================================
+
+const FEEDBACK_ENABLED_KEY = "feedback_module_enabled";
+
+async function isFeedbackEnabled() {
+  const setting = await prisma.setting.findUnique({ where: { key: FEEDBACK_ENABLED_KEY } });
+  return setting?.value === "true";
+}
+
+export const getFeedbackEnabled = asyncHandler(async (_req: Request, res: Response) => {
+  res.json({ success: true, data: { enabled: await isFeedbackEnabled() } });
+});
+
+export const updateFeedbackEnabled = asyncHandler(async (req: Request, res: Response) => {
+  const { enabled } = req.body as { enabled: boolean };
+  await prisma.setting.upsert({
+    where: { key: FEEDBACK_ENABLED_KEY },
+    update: { value: String(enabled), updatedById: req.user!.userId },
+    create: { key: FEEDBACK_ENABLED_KEY, value: String(enabled), updatedById: req.user!.userId },
+  });
+  await recordAudit({ userId: req.user!.userId, action: "SETTING_UPDATED", targetType: "Setting", targetId: FEEDBACK_ENABLED_KEY });
+  res.json({ success: true, data: { enabled } });
+});
+
+// ============================================================
 // ADMIN — question bank management
 // ============================================================
 
@@ -105,6 +132,11 @@ export const reorderFeedbackQuestions = asyncHandler(async (req: Request, res: R
 // ============================================================
 
 export const getMyFeedbackTargets = asyncHandler(async (req: Request, res: Response) => {
+  if (!(await isFeedbackEnabled())) {
+    res.json({ success: true, data: { academicYear: currentAcademicYear(), pendingCount: 0, targets: [] } });
+    return;
+  }
+
   const student = await prisma.student.findUnique({ where: { userId: req.user!.userId } });
   if (!student) throw ApiError.notFound("Student profile not found");
 
@@ -149,6 +181,10 @@ export const getMyFeedbackTargets = asyncHandler(async (req: Request, res: Respo
 });
 
 export const submitFeedback = asyncHandler(async (req: Request, res: Response) => {
+  if (!(await isFeedbackEnabled())) {
+    throw ApiError.forbidden("Faculty Feedback is currently disabled by the college administration.");
+  }
+
   const student = await prisma.student.findUnique({ where: { userId: req.user!.userId } });
   if (!student) throw ApiError.notFound("Student profile not found");
 

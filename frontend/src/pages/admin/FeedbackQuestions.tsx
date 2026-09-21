@@ -1,5 +1,5 @@
 import { useEffect, useState, FormEvent } from "react";
-import { ListChecks, Plus, Pencil, Trash2, GripVertical, ArrowUp, ArrowDown } from "lucide-react";
+import { ListChecks, Plus, Pencil, Trash2, GripVertical, ArrowUp, ArrowDown, Power } from "lucide-react";
 import { Card, CardHeader, CardBody } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/FormField";
@@ -22,7 +22,27 @@ export function FeedbackQuestions() {
   const [deleteTarget, setDeleteTarget] = useState<FeedbackQuestion | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [reordering, setReordering] = useState(false);
+  const [moduleEnabled, setModuleEnabled] = useState<boolean | null>(null);
+  const [togglingModule, setTogglingModule] = useState(false);
   const toast = useToast();
+
+  useEffect(() => {
+    feedbackService.getEnabled().then(setModuleEnabled);
+  }, []);
+
+  async function toggleModule() {
+    if (moduleEnabled === null) return;
+    setTogglingModule(true);
+    try {
+      const next = await feedbackService.setEnabled(!moduleEnabled);
+      setModuleEnabled(next);
+      toast.success(next ? "Faculty Feedback is now ON for students" : "Faculty Feedback is now OFF for students");
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setTogglingModule(false);
+    }
+  }
 
   async function reload() {
     setLoading(true);
@@ -115,13 +135,57 @@ export function FeedbackQuestions() {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <ListChecks className="h-4 w-4 text-brand-600" />
-            <h2 className="font-semibold text-slate-800">Feedback Questions</h2>
+    <div className="space-y-5">
+      <div
+        className={`flex flex-wrap items-center justify-between gap-4 rounded-2xl border px-5 py-4 transition-colors ${
+          moduleEnabled ? "border-emerald-200 bg-emerald-50" : "border-slate-200 bg-slate-50"
+        }`}
+      >
+        <div className="flex items-center gap-3">
+          <span
+            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl shadow-sm ${
+              moduleEnabled ? "bg-white text-emerald-600" : "bg-white text-slate-400"
+            }`}
+          >
+            <Power className="h-5 w-5" />
+          </span>
+          <div>
+            <p className="font-serif font-semibold text-brand-950">Faculty Feedback Module</p>
+            <p className="text-xs text-slate-500">
+              {moduleEnabled === null
+                ? "Loading..."
+                : moduleEnabled
+                ? "Students can see and submit feedback."
+                : "Off — students will not see the Faculty Feedback option at all."}
+            </p>
           </div>
+        </div>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={!!moduleEnabled}
+          disabled={moduleEnabled === null || togglingModule}
+          onClick={toggleModule}
+          className={`relative h-7 w-13 shrink-0 rounded-full transition-colors disabled:opacity-50 ${
+            moduleEnabled ? "bg-emerald-500" : "bg-slate-300"
+          }`}
+          style={{ width: "3.25rem" }}
+        >
+          <span
+            className={`absolute top-0.5 h-6 w-6 rounded-full bg-white shadow-md transition-transform ${
+              moduleEnabled ? "translate-x-[1.65rem]" : "translate-x-0.5"
+            }`}
+          />
+        </button>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <ListChecks className="h-4 w-4 text-brand-600" />
+              <h2 className="font-semibold text-slate-800">Feedback Questions</h2>
+            </div>
           <Button size="sm" onClick={openCreate}>
             <Plus className="h-4 w-4" /> Add Question
           </Button>
@@ -191,7 +255,8 @@ export function FeedbackQuestions() {
             ))}
           </div>
         )}
-      </CardBody>
+        </CardBody>
+      </Card>
 
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? "Edit Question" : "Add Question"}>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -222,7 +287,7 @@ export function FeedbackQuestions() {
         onConfirm={handleDelete}
         onCancel={() => setDeleteTarget(null)}
       />
-    </Card>
+    </div>
   );
 }
 

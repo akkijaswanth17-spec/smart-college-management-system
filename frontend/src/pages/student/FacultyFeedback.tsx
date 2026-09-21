@@ -50,14 +50,20 @@ export default function StudentFacultyFeedback() {
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [comment, setComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [enabled, setEnabled] = useState(true);
   const toast = useToast();
 
   async function reload() {
     setLoading(true);
     try {
-      const [t, q] = await Promise.all([feedbackService.myTargets(), feedbackService.listActiveQuestions()]);
+      const [t, q, isEnabled] = await Promise.all([
+        feedbackService.myTargets(),
+        feedbackService.listActiveQuestions(),
+        feedbackService.getEnabled(),
+      ]);
       setTargets(t.targets);
       setQuestions(q);
+      setEnabled(isEnabled);
     } catch (err) {
       toast.error(getErrorMessage(err));
     } finally {
@@ -112,6 +118,12 @@ export default function StudentFacultyFeedback() {
 
       {loading ? (
         <SkeletonList rows={5} />
+      ) : !enabled ? (
+        <EmptyState
+          icon={MessageSquareText}
+          title="Faculty Feedback is currently unavailable"
+          description="This feature has been turned off by the college administration. Please check back later."
+        />
       ) : targets.length === 0 ? (
         <EmptyState
           icon={MessageSquareText}

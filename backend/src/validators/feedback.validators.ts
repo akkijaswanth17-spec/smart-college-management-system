@@ -59,6 +59,12 @@ export const feedbackFacultyDetailQuerySchema = z.object({
   }),
 });
 
+export const updateFeedbackEnabledSchema = z.object({
+  body: z.object({
+    enabled: z.boolean(),
+  }),
+});
+
 export const publishFeedbackSchema = z.object({
   body: z.object({
     departmentId: z.string(),
