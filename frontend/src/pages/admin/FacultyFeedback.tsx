@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
-import { MessageSquareText, FileDown, Download, Send, CheckCircle2 } from "lucide-react";
+import { MessageSquareText, Download, Send, CheckCircle2 } from "lucide-react";
 import { Card, CardHeader, CardBody } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import { Select } from "../../components/ui/FormField";
-import { Modal } from "../../components/ui/Modal";
 import { ConfirmDialog } from "../../components/ui/ConfirmDialog";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { SkeletonTable } from "../../components/ui/Skeleton";
+import { ReportActions } from "../../components/reports/ReportActions";
+import { ReportPreview } from "../../components/reports/ReportPreview";
 import { FeedbackDetailReport } from "../../components/feedback/FeedbackDetailReport";
 import { useToast } from "../../context/ToastContext";
 import { useAuth } from "../../context/AuthContext";
@@ -21,6 +22,64 @@ import { FeedbackClassReportRow, FeedbackFacultyListRow, FeedbackFacultyDetail, 
 const currentAcademicYear = `${new Date().getFullYear()}-${new Date().getFullYear() + 1}`;
 
 type Tab = "class" | "faculty";
+
+function ClassReportFieldGrid({
+  department,
+  year,
+  section,
+  academicYear,
+}: {
+  department: string;
+  year: number;
+  section: string;
+  academicYear: string;
+}) {
+  const rows: [string, string][] = [
+    ["Department", department],
+    ["Year / Section", `Year ${year} - ${section}`],
+    ["Academic Year", academicYear],
+    ["Date", new Date().toLocaleDateString("en-IN", { dateStyle: "medium" })],
+  ];
+  return (
+    <dl className="grid grid-cols-1 gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
+      {rows.map(([label, value]) => (
+        <div key={label} className="flex justify-between gap-3 border-b border-dashed border-slate-100 pb-1.5 sm:border-none sm:pb-0">
+          <dt className="text-slate-500">{label}</dt>
+          <dd className="text-right font-semibold text-brand-950">{value}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
+function ClassReportTable({ rows }: { rows: FeedbackClassReportRow[] }) {
+  return (
+    <div className="overflow-x-auto rounded-lg border border-slate-200">
+      <table className="w-full text-sm">
+        <thead className="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+          <tr>
+            <th className="px-3 py-2">Subject</th>
+            <th className="px-3 py-2">Faculty Name</th>
+            <th className="px-3 py-2 text-right">Percentage</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-slate-100">
+          {rows.map((r) => (
+            <tr key={`${r.facultyId}-${r.subjectId}`}>
+              <td className="px-3 py-2 font-medium text-brand-950">
+                {r.subjectName} <span className="text-xs font-normal text-slate-400">({r.subjectCode})</span>
+              </td>
+              <td className="px-3 py-2 text-slate-700">{r.facultyName}</td>
+              <td className="px-3 py-2 text-right font-serif font-bold text-brand-950">
+                {r.percentage === null ? <span className="font-sans text-slate-300">No feedback yet</span> : `${r.percentage.toFixed(2)}%`}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
 
 export function FacultyFeedback() {
   const departments = useDepartmentOptions();
@@ -47,6 +106,8 @@ export function FacultyFeedback() {
   const [classReport, setClassReport] = useState<FeedbackClassReportRow[] | null>(null);
   const [loadingClassReport, setLoadingClassReport] = useState(false);
   const [downloadingClass, setDownloadingClass] = useState(false);
+  const [classPreviewOpen, setClassPreviewOpen] = useState(false);
+  const [classAutoPrint, setClassAutoPrint] = useState(false);
 
   async function loadClassReport() {
     if (!canLoad) return;
@@ -69,6 +130,7 @@ export function FacultyFeedback() {
         { department: department.name, departmentCode: department.code, year, section, academicYear, rows: classReport },
         getDisplayName(user)
       );
+      toast.success("Report generated successfully.");
     } catch {
       toast.error("Unable to generate the report. Please try again.");
     } finally {
@@ -83,6 +145,7 @@ export function FacultyFeedback() {
   const [detail, setDetail] = useState<FeedbackFacultyDetail | null>(null);
   const [loadingDetail, setLoadingDetail] = useState<string | null>(null);
   const [downloadingDetail, setDownloadingDetail] = useState(false);
+  const [detailAutoPrint, setDetailAutoPrint] = useState(false);
   const [confirmPublishOpen, setConfirmPublishOpen] = useState(false);
   const [publishing, setPublishing] = useState(false);
 
@@ -106,6 +169,7 @@ export function FacultyFeedback() {
     try {
       const d = await feedbackService.facultyDetail({ ...params, facultyId: row.facultyId, subjectId: row.subjectId });
       setDetail(d);
+      setDetailAutoPrint(false);
     } catch (err) {
       toast.error(getErrorMessage(err));
     } finally {
@@ -118,6 +182,7 @@ export function FacultyFeedback() {
     setDownloadingDetail(true);
     try {
       await generateFacultyFeedbackReportPdf(detail, getDisplayName(user));
+      toast.success("Report generated successfully.");
     } catch {
       toast.error("Unable to generate the report. Please try again.");
     } finally {
@@ -223,38 +288,22 @@ export function FacultyFeedback() {
               />
             )}
 
-            {!loadingClassReport && classReport && classReport.length > 0 && (
-              <div className="space-y-3">
-                <div className="flex justify-end">
-                  <Button variant="outline" size="sm" onClick={downloadClassReport} loading={downloadingClass}>
-                    <FileDown className="h-3.5 w-3.5" /> Download Report
-                  </Button>
-                </div>
-                <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="bg-slate-50 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                        <th className="px-4 py-3">Subject</th>
-                        <th className="px-4 py-3">Faculty Name</th>
-                        <th className="px-4 py-3 text-right">Percentage</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {classReport.map((r, i) => (
-                        <tr key={`${r.facultyId}-${r.subjectId}`} className={i % 2 === 1 ? "bg-slate-50" : "bg-white"}>
-                          <td className="px-4 py-2.5">
-                            <p className="font-medium text-slate-800">{r.subjectName}</p>
-                            <p className="text-xs text-slate-400">{r.subjectCode}</p>
-                          </td>
-                          <td className="px-4 py-2.5 text-slate-700">{r.facultyName}</td>
-                          <td className="px-4 py-2.5 text-right font-serif font-bold text-brand-950">
-                            {r.percentage === null ? <span className="font-sans text-slate-300">No feedback yet</span> : `${r.percentage.toFixed(2)}%`}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+            {!loadingClassReport && classReport && classReport.length > 0 && department && (
+              <div className="space-y-4 rounded-xl border border-slate-200 bg-slate-50/60 p-4">
+                <ClassReportFieldGrid department={`${department.name} (${department.code})`} year={year} section={section} academicYear={academicYear} />
+                <ClassReportTable rows={classReport} />
+                <ReportActions
+                  onPreview={() => {
+                    setClassAutoPrint(false);
+                    setClassPreviewOpen(true);
+                  }}
+                  onDownload={downloadClassReport}
+                  onPrint={() => {
+                    setClassAutoPrint(true);
+                    setClassPreviewOpen(true);
+                  }}
+                  downloading={downloadingClass}
+                />
               </div>
             )}
           </div>
@@ -313,21 +362,38 @@ export function FacultyFeedback() {
         )}
       </CardBody>
 
-      <Modal open={!!detail} onClose={() => setDetail(null)} title="Feedback Detail" maxWidth="max-w-3xl">
-        {detail && (
-          <div className="space-y-5">
-            <FeedbackDetailReport detail={detail} />
-            <div className="flex justify-end gap-3">
-              <Button variant="outline" onClick={() => setDetail(null)}>
-                Close
-              </Button>
-              <Button onClick={downloadDetail} loading={downloadingDetail}>
-                <FileDown className="h-4 w-4" /> Download PDF
-              </Button>
-            </div>
+      {department && classReport && (
+        <ReportPreview
+          open={classPreviewOpen}
+          onClose={() => setClassPreviewOpen(false)}
+          reportTitle="Faculty Feedback Report"
+          titleBadge={academicYear}
+          generatedBy={getDisplayName(user)}
+          onDownload={downloadClassReport}
+          downloading={downloadingClass}
+          autoPrint={classAutoPrint}
+        >
+          <ClassReportFieldGrid department={`${department.name} (${department.code})`} year={year} section={section} academicYear={academicYear} />
+          <div className="mt-4">
+            <ClassReportTable rows={classReport} />
           </div>
-        )}
-      </Modal>
+        </ReportPreview>
+      )}
+
+      {detail && (
+        <ReportPreview
+          open={!!detail}
+          onClose={() => setDetail(null)}
+          reportTitle={`Feedback Analysis Report : ${detail.departmentCode}-${detail.section} ${detail.year} Sem`}
+          titleBadge={detail.academicYear}
+          generatedBy={getDisplayName(user)}
+          onDownload={downloadDetail}
+          downloading={downloadingDetail}
+          autoPrint={detailAutoPrint}
+        >
+          <FeedbackDetailReport detail={detail} />
+        </ReportPreview>
+      )}
 
       <ConfirmDialog
         open={confirmPublishOpen}
