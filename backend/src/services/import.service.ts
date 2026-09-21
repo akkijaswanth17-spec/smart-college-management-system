@@ -29,15 +29,38 @@ export function parseCsv(buffer: Buffer): Record<string, string>[] {
   });
 }
 
+function normalizeHeaderKey(key: string): string {
+  return key
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+}
+
+/** A real sheet often has a title/letterhead above the actual header row (college
+ * name, class label, etc.) — this finds the first row that actually looks like one,
+ * the same heuristic already used for marks sheet imports. */
+function looksLikeHeaderRow(row: unknown[]): boolean {
+  return row.some((cell) => /^(s\.?\s?no|pin|roll|student|name)/i.test(String(cell ?? "").trim()));
+}
+
 function normalizeSheetRows(sheet: XLSX.WorkSheet): Record<string, string>[] {
-  const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: "", raw: false });
-  return rows.map((row) => {
-    const normalized: Record<string, string> = {};
-    Object.entries(row).forEach(([key, value]) => {
-      normalized[key.trim().toLowerCase().replace(/\s+/g, "_")] = String(value ?? "").trim();
+  const grid = XLSX.utils.sheet_to_json<unknown[]>(sheet, { header: 1, defval: "", raw: false });
+  const headerRowIndex = grid.findIndex(looksLikeHeaderRow);
+  const startRow = headerRowIndex === -1 ? 0 : headerRowIndex;
+  const headers = (grid[startRow] ?? []).map((h) => normalizeHeaderKey(String(h ?? "")));
+
+  return grid
+    .slice(startRow + 1)
+    .filter((row) => row.some((cell) => String(cell ?? "").trim() !== ""))
+    .map((row) => {
+      const normalized: Record<string, string> = {};
+      headers.forEach((key, i) => {
+        if (!key) return;
+        normalized[key] = String(row[i] ?? "").trim();
+      });
+      return normalized;
     });
-    return normalized;
-  });
 }
 
 function parseXlsx(buffer: Buffer): Record<string, string>[] {
@@ -120,6 +143,23 @@ function departmentCodeFromRollNo(rollNo: string): string | undefined {
   return undefined;
 }
 
+/** Matches a sheet tab's name (e.g. "V Sem ECE" or "V Sem DCME Section-II") against
+ * either the short Roll No branch codes or an existing department's own code. */
+function departmentFromSheetName(
+  sheetName: string,
+  deptByCode: Map<string, { id: string; code: string; name: string }>
+): { id: string; code: string; name: string } | undefined {
+  const byRollCode = deptByCode.get(departmentCodeFromRollNo(sheetName) ?? "");
+  if (byRollCode) return byRollCode;
+
+  const tokens = sheetName.toUpperCase().match(/[A-Z]+/g) ?? [];
+  for (const token of tokens) {
+    const match = deptByCode.get(token);
+    if (match) return match;
+  }
+  return undefined;
+}
+
 // A section is sometimes written as a plain letter (A, B, C, D) and sometimes as a
 // Roman numeral (I, II, III, IV) — both mean the same thing.
 const ROMAN_TO_SECTION_LETTER: Record<string, string> = { I: "A", II: "B", III: "C", IV: "D", V: "E", VI: "F" };
@@ -130,15 +170,18 @@ function normalizeSectionValue(raw?: string): string | undefined {
   return ROMAN_TO_SECTION_LETTER[value] ?? value;
 }
 
-/** Pulls a section letter out of a sheet tab name like "III Year DCME II" — skipping
- * the Roman numeral right before "Year"/"Yr", since that one is the year, not the section. */
+const YEAR_OR_SEM_WORDS = new Set(["YEAR", "YR", "SEM", "SEMESTER"]);
+
+/** Pulls a section letter out of a sheet tab name like "III Year DCME II" or "V Sem
+ * DCME Section-II" — skipping the Roman numeral right before "Year"/"Sem", since
+ * that one is the year/semester, not the section. */
 function sectionFromSheetName(sheetName: string): string | undefined {
   const tokens = sheetName.toUpperCase().match(/[A-Z]+/g) ?? [];
   for (let i = 0; i < tokens.length; i++) {
     const token = tokens[i];
     const next = tokens[i + 1];
-    const isYearRoman = (next === "YEAR" || next === "YR") && !!ROMAN_TO_SECTION_LETTER[token];
-    if (isYearRoman) continue;
+    const isYearOrSemRoman = !!next && YEAR_OR_SEM_WORDS.has(next) && !!ROMAN_TO_SECTION_LETTER[token];
+    if (isYearOrSemRoman) continue;
     const normalized = normalizeSectionValue(token);
     if (normalized && /^[A-F]$/.test(normalized)) return normalized;
   }
@@ -173,21 +216,26 @@ export async function importStudents(
 
       const rollNoBranchCode = departmentCodeFromRollNo(studentId);
       const rollNoDept = rollNoBranchCode ? deptByCode.get(rollNoBranchCode) : undefined;
+      // Last-resort fallback for a multi-sheet workbook when a row's own Roll No
+      // doesn't carry a recognizable branch code — try the sheet tab's name too.
+      const sheetDept = row._sheet_name ? departmentFromSheetName(row._sheet_name, deptByCode) : undefined;
       const department = row.department?.trim();
       const year = row.year?.trim() ? parseInt(row.year, 10) : defaults.year;
       // A, B, C... or I, II, III... in the row's own column, then the picked default,
       // then — for a multi-sheet workbook — a letter/numeral pulled from the tab name.
+      // Falls back to "A" when nothing at all specifies a section, rather than failing
+      // the whole row over what's usually a single-section class anyway.
       const section =
-        normalizeSectionValue(row.section) ?? defaults.section ?? (row._sheet_name ? sectionFromSheetName(row._sheet_name) : undefined);
+        normalizeSectionValue(row.section) ??
+        defaults.section ??
+        (row._sheet_name ? sectionFromSheetName(row._sheet_name) : undefined) ??
+        "A";
 
-      if (!rollNoDept && !department && !defaultDept) {
+      if (!rollNoDept && !department && !defaultDept && !sheetDept) {
         throw new Error("No department column in the sheet and none selected before importing");
       }
       if (year === undefined || Number.isNaN(year)) {
         throw new Error("No year column in the sheet and none selected before importing");
-      }
-      if (!section) {
-        throw new Error("No section column in the sheet and none selected before importing");
       }
 
       const email = row.email?.trim().toLowerCase() || placeholderEmail(studentId);
@@ -202,7 +250,7 @@ export async function importStudents(
 
       // The Roll Number's own branch code always wins over a sheet's department
       // column or tab name — it's the ground truth for which branch a student is in.
-      const dept = rollNoDept ?? (department ? await findOrCreateDepartment(department) : defaultDept!);
+      const dept = rollNoDept ?? (department ? await findOrCreateDepartment(department) : (defaultDept ?? sheetDept)!);
       // Defaults to the student's own Roll Number when the sheet doesn't specify one.
       const tempPassword = row.password?.trim() || studentId;
       const passwordHash = await hashPassword(tempPassword);
