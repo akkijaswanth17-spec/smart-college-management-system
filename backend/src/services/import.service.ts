@@ -29,11 +29,7 @@ export function parseCsv(buffer: Buffer): Record<string, string>[] {
   });
 }
 
-function parseXlsx(buffer: Buffer): Record<string, string>[] {
-  const workbook = XLSX.read(buffer, { type: "buffer" });
-  const sheetName = workbook.SheetNames[0];
-  if (!sheetName) return [];
-  const sheet = workbook.Sheets[sheetName];
+function normalizeSheetRows(sheet: XLSX.WorkSheet): Record<string, string>[] {
   const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: "", raw: false });
   return rows.map((row) => {
     const normalized: Record<string, string> = {};
@@ -44,9 +40,27 @@ function parseXlsx(buffer: Buffer): Record<string, string>[] {
   });
 }
 
+function parseXlsx(buffer: Buffer): Record<string, string>[] {
+  const workbook = XLSX.read(buffer, { type: "buffer" });
+  const sheetName = workbook.SheetNames[0];
+  if (!sheetName) return [];
+  return normalizeSheetRows(workbook.Sheets[sheetName]);
+}
+
 /** Accepts either a .csv or a .xlsx/.xls import file, based on the original filename. */
 export function parseImportFile(buffer: Buffer, filename: string): Record<string, string>[] {
   return /\.(xlsx|xls)$/i.test(filename) ? parseXlsx(buffer) : parseCsv(buffer);
+}
+
+/** Every non-empty sheet in a workbook, kept separate by tab name — a .csv only ever has one "sheet". */
+export function parseImportFileGrouped(buffer: Buffer, filename: string): { sheetName: string; rows: Record<string, string>[] }[] {
+  if (!/\.(xlsx|xls)$/i.test(filename)) {
+    return [{ sheetName: "", rows: parseCsv(buffer) }];
+  }
+  const workbook = XLSX.read(buffer, { type: "buffer" });
+  return workbook.SheetNames.map((sheetName) => ({ sheetName, rows: normalizeSheetRows(workbook.Sheets[sheetName]) })).filter(
+    (g) => g.rows.length > 0
+  );
 }
 
 const DAY_ALIASES: Record<string, DayOfWeek> = {
@@ -85,6 +99,27 @@ function placeholderEmail(studentId: string): string {
   return `${local}@students.local`;
 }
 
+// The Roll Number itself encodes the branch (e.g. "24351-CM-001") — this is checked
+// before anything else, since it's the one signal that's always present and reliable,
+// unlike a sheet's tab name or an optional department column.
+const ROLL_NO_BRANCH_CODES: Record<string, string> = {
+  CM: "DCME",
+  EC: "ECE",
+  EE: "EEE",
+  ME: "MECH",
+  M: "MECH",
+  CE: "CIVIL",
+  AM: "AIML",
+};
+
+function departmentCodeFromRollNo(rollNo: string): string | undefined {
+  const letterRuns = rollNo.toUpperCase().match(/[A-Z]+/g) ?? [];
+  for (const run of letterRuns) {
+    if (ROLL_NO_BRANCH_CODES[run]) return ROLL_NO_BRANCH_CODES[run];
+  }
+  return undefined;
+}
+
 export async function importStudents(
   rows: Record<string, string>[],
   importedById: string,
@@ -93,7 +128,11 @@ export async function importStudents(
   const errors: RowError[] = [];
   let successRows = 0;
 
-  const defaultDept = defaults.departmentId ? await prisma.department.findUnique({ where: { id: defaults.departmentId } }) : null;
+  const [defaultDept, allDepts] = await Promise.all([
+    defaults.departmentId ? prisma.department.findUnique({ where: { id: defaults.departmentId } }) : null,
+    prisma.department.findMany(),
+  ]);
+  const deptByCode = new Map(allDepts.map((d) => [d.code.toUpperCase(), d]));
 
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i];
@@ -107,11 +146,13 @@ export async function importStudents(
         throw new Error("Missing required field(s): roll_no, name");
       }
 
+      const rollNoBranchCode = departmentCodeFromRollNo(studentId);
+      const rollNoDept = rollNoBranchCode ? deptByCode.get(rollNoBranchCode) : undefined;
       const department = row.department?.trim();
       const year = row.year?.trim() ? parseInt(row.year, 10) : defaults.year;
       const section = row.section?.trim() || defaults.section;
 
-      if (!department && !defaultDept) {
+      if (!rollNoDept && !department && !defaultDept) {
         throw new Error("No department column in the sheet and none selected before importing");
       }
       if (year === undefined || Number.isNaN(year)) {
@@ -131,7 +172,9 @@ export async function importStudents(
       if (existingEmail) throw new Error(`Email ${email} already registered`);
       if (existingStudentId) throw new Error(`Student ID ${studentId} already registered`);
 
-      const dept = department ? await findOrCreateDepartment(department) : defaultDept!;
+      // The Roll Number's own branch code always wins over a sheet's department
+      // column or tab name — it's the ground truth for which branch a student is in.
+      const dept = rollNoDept ?? (department ? await findOrCreateDepartment(department) : defaultDept!);
       // Defaults to the student's own Roll Number when the sheet doesn't specify one.
       const tempPassword = row.password?.trim() || studentId;
       const passwordHash = await hashPassword(tempPassword);

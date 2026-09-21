@@ -427,29 +427,37 @@ export default function AdminStudents() {
         onImported={reload}
         canImport={!!importDepartmentId}
         extra={
-          <div className="grid grid-cols-3 gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
-            <Select label="Department" value={importDepartmentId} onChange={(e) => setImportDepartmentId(e.target.value)}>
-              <option value="">Select</option>
-              {departments.map((d) => (
-                <option key={d.id} value={d.id}>
-                  {d.name}
-                </option>
-              ))}
-            </Select>
-            <Select label="Year" value={importClassKey} onChange={(e) => setImportClassKey(e.target.value)}>
-              {CLASS_OPTIONS.map((o) => (
-                <option key={o.key} value={o.key}>
-                  {o.label}
-                </option>
-              ))}
-            </Select>
-            <Select label="Section" value={importSection} onChange={(e) => setImportSection(e.target.value)}>
-              {SECTION_OPTIONS.map((s) => (
-                <option key={s} value={s}>
-                  {s}
-                </option>
-              ))}
-            </Select>
+          <div className="space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-3">
+            <div className="grid grid-cols-3 gap-3">
+              <Select label="Department" value={importDepartmentId} onChange={(e) => setImportDepartmentId(e.target.value)}>
+                <option value="">Select</option>
+                <option value="ALL">All (one sheet per branch)</option>
+                {departments.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.name}
+                  </option>
+                ))}
+              </Select>
+              <Select label="Year" value={importClassKey} onChange={(e) => setImportClassKey(e.target.value)}>
+                {CLASS_OPTIONS.map((o) => (
+                  <option key={o.key} value={o.key}>
+                    {o.label}
+                  </option>
+                ))}
+              </Select>
+              <Select label="Section" value={importSection} onChange={(e) => setImportSection(e.target.value)}>
+                {SECTION_OPTIONS.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            <p className="text-xs text-slate-500">
+              Each student's own Roll No decides their department first — CM → DCME, EC → ECE, EE → EEE, ME/M →
+              Mechanical, CE → Civil, AM → AIML. The Department picker above is only a fallback for roll numbers that
+              don't carry a branch code{importDepartmentId === "ALL" ? " (and for those, each sheet tab's name is matched to a department instead)" : ""}.
+            </p>
           </div>
         }
       />
