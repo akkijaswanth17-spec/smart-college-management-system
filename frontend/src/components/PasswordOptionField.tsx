@@ -9,11 +9,14 @@ export function PasswordOptionField({
   onChange,
   manual,
   onManualChange,
+  autoHint = "A secure temporary password will be generated automatically.",
 }: {
   value: string;
   onChange: (v: string) => void;
   manual: boolean;
   onManualChange: (v: boolean) => void;
+  /** Overrides the helper text shown when the password isn't set manually. */
+  autoHint?: string;
 }) {
   const [show, setShow] = useState(false);
 
@@ -58,7 +61,7 @@ export function PasswordOptionField({
           </button>
         </div>
       ) : (
-        <p className="text-xs text-slate-400">A secure temporary password will be generated automatically.</p>
+        <p className="text-xs text-slate-400">{autoHint}</p>
       )}
     </div>
   );

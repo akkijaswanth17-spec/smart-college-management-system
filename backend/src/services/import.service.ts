@@ -77,7 +77,8 @@ export async function importStudents(rows: Record<string, string>[], importedByI
       if (existingStudentId) throw new Error(`Student ID ${studentId} already registered`);
 
       const dept = await findOrCreateDepartment(department);
-      const tempPassword = row.password?.trim() || generateTempPassword();
+      // Defaults to the student's own Roll Number when the sheet doesn't specify one.
+      const tempPassword = row.password?.trim() || studentId;
       const passwordHash = await hashPassword(tempPassword);
 
       await prisma.user.create({

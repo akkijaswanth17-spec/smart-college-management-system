@@ -301,7 +301,13 @@ export default function AdminStudents() {
               ))}
             </Select>
           </div>
-          <PasswordOptionField value={password} onChange={setPassword} manual={manualPassword} onManualChange={setManualPassword} />
+          <PasswordOptionField
+            value={password}
+            onChange={setPassword}
+            manual={manualPassword}
+            onManualChange={setManualPassword}
+            autoHint="Defaults to the student's own Roll Number / Student ID."
+          />
           <div className="flex justify-end gap-3 pt-2">
             <Button
               type="button"

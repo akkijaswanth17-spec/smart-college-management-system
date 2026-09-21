@@ -5,7 +5,7 @@ import { ApiError } from "../utils/apiError";
 import { getPagination, buildMeta } from "../utils/pagination";
 import { serializeUser } from "../utils/serializeUser";
 import { recordAudit } from "../services/audit.service";
-import { hashPassword, generateTempPassword } from "../utils/password";
+import { hashPassword } from "../utils/password";
 import { assertOwnBranch, scopedDepartmentId } from "../middleware/branchScope.middleware";
 
 export const createStudent = asyncHandler(async (req: Request, res: Response) => {
@@ -23,8 +23,9 @@ export const createStudent = asyncHandler(async (req: Request, res: Response) =>
   if (existingStudentId) throw ApiError.conflict("This Student ID / Roll Number is already registered");
   if (!dept) throw ApiError.badRequest("Selected department does not exist");
 
-  // Admin may set the initial password directly; otherwise one is generated.
-  const tempPassword = password || generateTempPassword();
+  // Admin may set the initial password directly; otherwise it defaults to the
+  // student's own Roll Number, so it's always something the student already knows.
+  const tempPassword = password || studentId;
   const passwordHash = await hashPassword(tempPassword);
 
   const user = await prisma.user.create({
