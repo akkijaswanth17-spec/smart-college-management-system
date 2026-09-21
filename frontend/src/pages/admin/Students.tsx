@@ -412,7 +412,7 @@ export default function AdminStudents() {
         open={importOpen}
         onClose={() => setImportOpen(false)}
         title="Import Students"
-        columns={["name", "student_id", "email", "phone", "department", "year", "section"]}
+        columns={["roll_no", "name", "email", "phone", "department", "year", "section"]}
         onImport={importService.students}
         templateHref="/import-templates/students.csv"
         onImported={reload}

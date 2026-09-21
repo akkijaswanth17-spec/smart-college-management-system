@@ -3,7 +3,7 @@ import fs from "fs";
 import { asyncHandler } from "../utils/asyncHandler";
 import { ApiError } from "../utils/apiError";
 import { prisma } from "../config/prisma";
-import { parseCsv, importStudents, importFaculty, importTimetable } from "../services/import.service";
+import { parseImportFile, importStudents, importFaculty, importTimetable } from "../services/import.service";
 import { recordAudit } from "../services/audit.service";
 
 async function runImport(
@@ -17,10 +17,10 @@ async function runImport(
     errors: { row: number; message: string }[];
   }>
 ) {
-  if (!req.file) throw ApiError.badRequest("A CSV file is required");
+  if (!req.file) throw ApiError.badRequest("A CSV or Excel file is required");
 
   const buffer = fs.readFileSync(req.file.path);
-  const rows = parseCsv(buffer);
+  const rows = parseImportFile(buffer, req.file.originalname);
 
   if (rows.length === 0) throw ApiError.badRequest("The uploaded file has no data rows");
   if (rows.length > 5000) throw ApiError.badRequest("Maximum 5000 rows per import");

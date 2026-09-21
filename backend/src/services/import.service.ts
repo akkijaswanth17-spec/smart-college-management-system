@@ -1,4 +1,5 @@
 import { parse } from "csv-parse/sync";
+import * as XLSX from "xlsx";
 import { DayOfWeek } from "@prisma/client";
 import { prisma } from "../config/prisma";
 import { hashPassword, generateTempPassword } from "../utils/password";
@@ -26,6 +27,26 @@ export function parseCsv(buffer: Buffer): Record<string, string>[] {
     skip_empty_lines: true,
     trim: true,
   });
+}
+
+function parseXlsx(buffer: Buffer): Record<string, string>[] {
+  const workbook = XLSX.read(buffer, { type: "buffer" });
+  const sheetName = workbook.SheetNames[0];
+  if (!sheetName) return [];
+  const sheet = workbook.Sheets[sheetName];
+  const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: "", raw: false });
+  return rows.map((row) => {
+    const normalized: Record<string, string> = {};
+    Object.entries(row).forEach(([key, value]) => {
+      normalized[key.trim().toLowerCase().replace(/\s+/g, "_")] = String(value ?? "").trim();
+    });
+    return normalized;
+  });
+}
+
+/** Accepts either a .csv or a .xlsx/.xls import file, based on the original filename. */
+export function parseImportFile(buffer: Buffer, filename: string): Record<string, string>[] {
+  return /\.(xlsx|xls)$/i.test(filename) ? parseXlsx(buffer) : parseCsv(buffer);
 }
 
 const DAY_ALIASES: Record<string, DayOfWeek> = {
@@ -58,7 +79,8 @@ export async function importStudents(rows: Record<string, string>[], importedByI
     const lineNo = i + 2; // account for header row
     try {
       const name = row.name?.trim();
-      const studentId = row.student_id?.trim();
+      // "roll_no" is the current column name — "student_id" still accepted for older sheets.
+      const studentId = row.roll_no?.trim() || row.student_id?.trim();
       const email = row.email?.trim().toLowerCase();
       const phone = row.phone?.trim();
       const department = row.department?.trim();
@@ -66,7 +88,7 @@ export async function importStudents(rows: Record<string, string>[], importedByI
       const section = row.section?.trim();
 
       if (!name || !studentId || !email || !phone || !department || !section || Number.isNaN(year)) {
-        throw new Error("Missing required field(s): name, student_id, email, phone, department, year, section");
+        throw new Error("Missing required field(s): roll_no, name, email, phone, department, year, section");
       }
 
       const [existingEmail, existingStudentId] = await Promise.all([
