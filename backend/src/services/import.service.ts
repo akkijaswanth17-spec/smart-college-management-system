@@ -37,30 +37,83 @@ function normalizeHeaderKey(key: string): string {
     .replace(/^_+|_+$/g, "");
 }
 
+// A real registrar's sheet rarely spells these exactly "roll_no" / "name" — this
+// maps the common real-world spellings onto the canonical column names.
+const HEADER_ALIASES: Record<string, string> = {
+  regd_no: "roll_no",
+  reg_no: "roll_no",
+  regno: "roll_no",
+  registration_no: "roll_no",
+  registration_number: "roll_no",
+  ht_no: "roll_no",
+  htno: "roll_no",
+  hall_ticket_no: "roll_no",
+  hallticket_no: "roll_no",
+  pin_no: "roll_no",
+  pin: "roll_no",
+  name_of_the_student: "name",
+  name_of_student: "name",
+  student_name: "name",
+  candidate_name: "name",
+};
+
+function applyHeaderAlias(key: string): string {
+  return HEADER_ALIASES[key] ?? key;
+}
+
 /** A real sheet often has a title/letterhead above the actual header row (college
  * name, class label, etc.) — this finds the first row that actually looks like one,
  * the same heuristic already used for marks sheet imports. */
 function looksLikeHeaderRow(row: unknown[]): boolean {
-  return row.some((cell) => /^(s\.?\s?no|pin|roll|student|name)/i.test(String(cell ?? "").trim()));
+  return row.some((cell) => /^(s\.?\s?no|pin|roll|regd|reg\.?\s?no|student|name)/i.test(String(cell ?? "").trim()));
+}
+
+interface HeaderColumn {
+  index: number;
+  key: string;
+}
+
+/** A sheet sometimes packs two side-by-side student lists into the same rows
+ * (e.g. columns A-C and E-G, to fit more names per page) — this splits the header
+ * row into one independent column group per block, wherever a header cell is blank. */
+function buildHeaderGroups(headerRow: unknown[]): HeaderColumn[][] {
+  const groups: HeaderColumn[][] = [];
+  let current: HeaderColumn[] = [];
+  headerRow.forEach((raw, index) => {
+    const text = String(raw ?? "").trim();
+    if (!text) {
+      if (current.length) groups.push(current);
+      current = [];
+      return;
+    }
+    current.push({ index, key: applyHeaderAlias(normalizeHeaderKey(text)) });
+  });
+  if (current.length) groups.push(current);
+  return groups;
 }
 
 function normalizeSheetRows(sheet: XLSX.WorkSheet): Record<string, string>[] {
   const grid = XLSX.utils.sheet_to_json<unknown[]>(sheet, { header: 1, defval: "", raw: false });
   const headerRowIndex = grid.findIndex(looksLikeHeaderRow);
   const startRow = headerRowIndex === -1 ? 0 : headerRowIndex;
-  const headers = (grid[startRow] ?? []).map((h) => normalizeHeaderKey(String(h ?? "")));
+  const groups = buildHeaderGroups(grid[startRow] ?? []);
+  const dataRows = grid.slice(startRow + 1);
 
-  return grid
-    .slice(startRow + 1)
-    .filter((row) => row.some((cell) => String(cell ?? "").trim() !== ""))
-    .map((row) => {
+  const result: Record<string, string>[] = [];
+  for (const group of groups) {
+    for (const row of dataRows) {
       const normalized: Record<string, string> = {};
-      headers.forEach((key, i) => {
-        if (!key) return;
-        normalized[key] = String(row[i] ?? "").trim();
-      });
-      return normalized;
-    });
+      let hasValue = false;
+      for (const { index, key } of group) {
+        if (!key) continue;
+        const value = String(row[index] ?? "").trim();
+        if (value) hasValue = true;
+        normalized[key] = value;
+      }
+      if (hasValue) result.push(normalized);
+    }
+  }
+  return result;
 }
 
 function parseXlsx(buffer: Buffer): Record<string, string>[] {
