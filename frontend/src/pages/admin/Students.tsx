@@ -42,6 +42,9 @@ export default function AdminStudents() {
 
   const [createOpen, setCreateOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
+  const [importDepartmentId, setImportDepartmentId] = useState("");
+  const [importClassKey, setImportClassKey] = useState(CLASS_OPTIONS[0].key);
+  const [importSection, setImportSection] = useState(SECTION_OPTIONS[0]);
   const [createForm, setCreateForm] = useState(emptyCreateForm);
   const [manualPassword, setManualPassword] = useState(false);
   const [password, setPassword] = useState("");
@@ -412,10 +415,43 @@ export default function AdminStudents() {
         open={importOpen}
         onClose={() => setImportOpen(false)}
         title="Import Students"
-        columns={["roll_no", "name", "email", "phone", "department", "year", "section"]}
-        onImport={importService.students}
+        columns={["roll_no", "name"]}
+        onImport={(file) =>
+          importService.students(file, {
+            departmentId: importDepartmentId,
+            year: CLASS_OPTIONS.find((o) => o.key === importClassKey)!.year,
+            section: importSection,
+          })
+        }
         templateHref="/import-templates/students.csv"
         onImported={reload}
+        canImport={!!importDepartmentId}
+        extra={
+          <div className="grid grid-cols-3 gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
+            <Select label="Department" value={importDepartmentId} onChange={(e) => setImportDepartmentId(e.target.value)}>
+              <option value="">Select</option>
+              {departments.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.name}
+                </option>
+              ))}
+            </Select>
+            <Select label="Year" value={importClassKey} onChange={(e) => setImportClassKey(e.target.value)}>
+              {CLASS_OPTIONS.map((o) => (
+                <option key={o.key} value={o.key}>
+                  {o.label}
+                </option>
+              ))}
+            </Select>
+            <Select label="Section" value={importSection} onChange={(e) => setImportSection(e.target.value)}>
+              {SECTION_OPTIONS.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </Select>
+          </div>
+        }
       />
     </div>
   );

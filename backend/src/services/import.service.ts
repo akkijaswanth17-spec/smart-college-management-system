@@ -70,9 +70,30 @@ async function findOrCreateDepartment(nameOrCode: string) {
   return dept;
 }
 
-export async function importStudents(rows: Record<string, string>[], importedById: string): Promise<ImportSummary> {
+export interface StudentImportDefaults {
+  /** Used for every row that doesn't specify its own department/year/section — the
+   * common case for a plain "roll_no, name" class roster. */
+  departmentId?: string;
+  year?: number;
+  section?: string;
+}
+
+/** Students already log in with just their Roll Number (see auth.service.ts), so a
+ * placeholder login email — never actually used by the student — is fine here. */
+function placeholderEmail(studentId: string): string {
+  const local = studentId.toLowerCase().replace(/[^a-z0-9.-]/g, "") || "student";
+  return `${local}@students.local`;
+}
+
+export async function importStudents(
+  rows: Record<string, string>[],
+  importedById: string,
+  defaults: StudentImportDefaults = {}
+): Promise<ImportSummary> {
   const errors: RowError[] = [];
   let successRows = 0;
+
+  const defaultDept = defaults.departmentId ? await prisma.department.findUnique({ where: { id: defaults.departmentId } }) : null;
 
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i];
@@ -81,15 +102,27 @@ export async function importStudents(rows: Record<string, string>[], importedByI
       const name = row.name?.trim();
       // "roll_no" is the current column name — "student_id" still accepted for older sheets.
       const studentId = row.roll_no?.trim() || row.student_id?.trim();
-      const email = row.email?.trim().toLowerCase();
-      const phone = row.phone?.trim();
-      const department = row.department?.trim();
-      const year = parseInt(row.year ?? "", 10);
-      const section = row.section?.trim();
 
-      if (!name || !studentId || !email || !phone || !department || !section || Number.isNaN(year)) {
-        throw new Error("Missing required field(s): roll_no, name, email, phone, department, year, section");
+      if (!name || !studentId) {
+        throw new Error("Missing required field(s): roll_no, name");
       }
+
+      const department = row.department?.trim();
+      const year = row.year?.trim() ? parseInt(row.year, 10) : defaults.year;
+      const section = row.section?.trim() || defaults.section;
+
+      if (!department && !defaultDept) {
+        throw new Error("No department column in the sheet and none selected before importing");
+      }
+      if (year === undefined || Number.isNaN(year)) {
+        throw new Error("No year column in the sheet and none selected before importing");
+      }
+      if (!section) {
+        throw new Error("No section column in the sheet and none selected before importing");
+      }
+
+      const email = row.email?.trim().toLowerCase() || placeholderEmail(studentId);
+      const phone = row.phone?.trim() || "";
 
       const [existingEmail, existingStudentId] = await Promise.all([
         prisma.user.findUnique({ where: { email } }),
@@ -98,7 +131,7 @@ export async function importStudents(rows: Record<string, string>[], importedByI
       if (existingEmail) throw new Error(`Email ${email} already registered`);
       if (existingStudentId) throw new Error(`Student ID ${studentId} already registered`);
 
-      const dept = await findOrCreateDepartment(department);
+      const dept = department ? await findOrCreateDepartment(department) : defaultDept!;
       // Defaults to the student's own Roll Number when the sheet doesn't specify one.
       const tempPassword = row.password?.trim() || studentId;
       const passwordHash = await hashPassword(tempPassword);

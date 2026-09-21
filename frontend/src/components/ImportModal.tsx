@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { ReactNode, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Upload, Download } from "lucide-react";
 import { Modal } from "./ui/Modal";
@@ -7,7 +7,7 @@ import { useToast } from "../context/ToastContext";
 import { getErrorMessage } from "../services/api";
 import { ImportSummary } from "../types";
 
-/** Bulk CSV import, reused as a modal from the Students and Faculty pages' own toolbars. */
+/** Bulk CSV/Excel import, reused as a modal from the Students and Faculty pages' own toolbars. */
 export function ImportModal({
   open,
   onClose,
@@ -16,6 +16,8 @@ export function ImportModal({
   onImport,
   templateHref,
   onImported,
+  extra,
+  canImport = true,
 }: {
   open: boolean;
   onClose: () => void;
@@ -25,6 +27,10 @@ export function ImportModal({
   templateHref: string;
   /** Called after a successful import so the caller can refresh its list. */
   onImported?: () => void;
+  /** Extra fields (e.g. Department/Year/Section pickers) rendered above the file picker. */
+  extra?: ReactNode;
+  /** Set false to disable the Import button until `extra`'s required fields are filled in. */
+  canImport?: boolean;
 }) {
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
@@ -64,6 +70,8 @@ export function ImportModal({
           </a>
         </div>
 
+        {extra}
+
         <div className="flex flex-wrap items-center gap-3">
           <input
             type="file"
@@ -71,7 +79,7 @@ export function ImportModal({
             onChange={(e) => setFile(e.target.files?.[0] ?? null)}
             className="block flex-1 text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-brand-50 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-brand-700 hover:file:bg-brand-100"
           />
-          <Button onClick={handleUpload} disabled={!file} loading={loading}>
+          <Button onClick={handleUpload} disabled={!file || !canImport} loading={loading}>
             <Upload className="h-4 w-4" /> Import
           </Button>
         </div>

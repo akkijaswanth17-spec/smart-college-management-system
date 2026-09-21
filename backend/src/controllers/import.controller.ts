@@ -51,9 +51,17 @@ async function runImport(
   res.status(201).json({ success: true, data: { batchId: batch.id, ...summary } });
 }
 
-export const importStudentsCsv = asyncHandler((req: Request, res: Response) =>
-  runImport(req, res, "STUDENTS", importStudents)
-);
+export const importStudentsCsv = asyncHandler((req: Request, res: Response) => {
+  // A sheet with just Roll No + Name is common — Admin picks the class it belongs
+  // to once here, instead of repeating Department/Year/Section on every row.
+  const { departmentId, year, section } = req.body as { departmentId?: string; year?: string; section?: string };
+  const defaults = {
+    departmentId: departmentId || undefined,
+    year: year ? Number(year) : undefined,
+    section: section || undefined,
+  };
+  return runImport(req, res, "STUDENTS", (rows, userId) => importStudents(rows, userId, defaults));
+});
 
 export const importFacultyCsv = asyncHandler((req: Request, res: Response) =>
   runImport(req, res, "FACULTY", importFaculty)

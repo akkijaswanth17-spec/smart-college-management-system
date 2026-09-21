@@ -2,9 +2,12 @@ import { api } from "./api";
 import { ImportSummary } from "../types";
 
 export const importService = {
-  async students(file: File) {
+  async students(file: File, defaults?: { departmentId?: string; year?: number; section?: string }) {
     const form = new FormData();
     form.append("file", file);
+    if (defaults?.departmentId) form.append("departmentId", defaults.departmentId);
+    if (defaults?.year) form.append("year", String(defaults.year));
+    if (defaults?.section) form.append("section", defaults.section);
     const res = await api.post<{ data: ImportSummary }>("/import/students", form, {
       headers: { "Content-Type": "multipart/form-data" },
     });
