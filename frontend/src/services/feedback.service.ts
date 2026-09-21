@@ -46,7 +46,12 @@ export const feedbackService = {
     const res = await api.get<{ data: FeedbackTargetsResponse }>("/feedback/my-targets");
     return res.data.data;
   },
-  async submit(payload: { facultyId: string; subjectId: string; answers: { questionId: string; rating: number }[] }) {
+  async submit(payload: {
+    facultyId: string;
+    subjectId: string;
+    answers: { questionId: string; rating: number }[];
+    comment?: string;
+  }) {
     const res = await api.post<{ message: string }>("/feedback/submit", payload);
     return res.data.message;
   },

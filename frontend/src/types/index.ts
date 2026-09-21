@@ -444,6 +444,7 @@ export interface FeedbackFacultyDetail {
   submissionCount: number;
   percentage: number;
   questions: FeedbackQuestionDetail[];
+  comments: string[];
 }
 
 export interface FeedbackPublishStatus {

@@ -152,10 +152,11 @@ export const submitFeedback = asyncHandler(async (req: Request, res: Response) =
   const student = await prisma.student.findUnique({ where: { userId: req.user!.userId } });
   if (!student) throw ApiError.notFound("Student profile not found");
 
-  const { facultyId, subjectId, answers } = req.body as {
+  const { facultyId, subjectId, answers, comment } = req.body as {
     facultyId: string;
     subjectId: string;
     answers: { questionId: string; rating: number }[];
+    comment?: string;
   };
   const academicYear = currentAcademicYear();
 
@@ -199,6 +200,7 @@ export const submitFeedback = asyncHandler(async (req: Request, res: Response) =
       year: student.year,
       section: student.section,
       academicYear,
+      comment: comment && comment.length > 0 ? comment : undefined,
       answers: {
         create: answers.map((a) => ({ questionId: a.questionId, rating: a.rating })),
       },
@@ -229,7 +231,7 @@ async function buildFeedbackDetail(params: {
   section: string;
   academicYear: string;
 }) {
-  const [faculty, subject, department, allQuestions, submissionCount, grouped, overallAvg] = await Promise.all([
+  const [faculty, subject, department, allQuestions, submissionCount, comments, grouped, overallAvg] = await Promise.all([
     prisma.faculty.findUnique({ where: { id: params.facultyId }, select: { fullName: true, title: true } }),
     prisma.subject.findUnique({ where: { id: params.subjectId }, select: { name: true, code: true } }),
     prisma.department.findUnique({ where: { id: params.departmentId }, select: { name: true, code: true } }),
@@ -243,6 +245,19 @@ async function buildFeedbackDetail(params: {
         section: params.section,
         academicYear: params.academicYear,
       },
+    }),
+    prisma.feedbackSubmission.findMany({
+      where: {
+        facultyId: params.facultyId,
+        subjectId: params.subjectId,
+        departmentId: params.departmentId,
+        year: params.year,
+        section: params.section,
+        academicYear: params.academicYear,
+        comment: { not: null },
+      },
+      select: { comment: true },
+      orderBy: { createdAt: "desc" },
     }),
     prisma.feedbackAnswer.groupBy({
       by: ["questionId", "rating"],
@@ -309,6 +324,7 @@ async function buildFeedbackDetail(params: {
     submissionCount,
     percentage,
     questions,
+    comments: comments.map((c) => c.comment!).filter((c) => c.trim().length > 0),
   };
 }
 

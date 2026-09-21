@@ -613,6 +613,9 @@ model FeedbackSubmission {
   year         Int
   section      String
   academicYear String   @map("academic_year")
+  // Optional free-text suggestion alongside the ratings — shown to Admin/Faculty
+  // anonymously (never attributed to the submitting student in any report).
+  comment      String?
   createdAt    DateTime @default(now()) @map("created_at")
 
   student    Student    @relation(fields: [studentId], references: [id], onDelete: Cascade)

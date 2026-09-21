@@ -35,6 +35,7 @@ export const submitFeedbackSchema = z.object({
         })
       )
       .min(1),
+    comment: z.string().trim().max(1000).optional(),
   }),
 });
 

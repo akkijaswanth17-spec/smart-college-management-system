@@ -1,3 +1,4 @@
+import { MessageSquareQuote } from "lucide-react";
 import { FeedbackFacultyDetail } from "../../types";
 
 /**
@@ -51,6 +52,21 @@ export function FeedbackDetailReport({ detail }: { detail: FeedbackFacultyDetail
       <div className="rounded-2xl border border-gold-200 bg-gold-50 px-6 py-4 text-center">
         <p className="text-lg font-bold text-brand-950">FEEDBACK % : {detail.percentage.toFixed(2)}%</p>
       </div>
+
+      {detail.comments.length > 0 && (
+        <div className="space-y-2.5">
+          <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
+            <MessageSquareQuote className="h-3.5 w-3.5" /> Student Suggestions / Feedback
+          </p>
+          <div className="space-y-2">
+            {detail.comments.map((c, i) => (
+              <p key={i} className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm italic text-slate-700">
+                “{c}”
+              </p>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

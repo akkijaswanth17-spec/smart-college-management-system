@@ -4,6 +4,7 @@ import { Card } from "../../components/ui/Card";
 import { Badge } from "../../components/ui/Badge";
 import { Button } from "../../components/ui/Button";
 import { Modal } from "../../components/ui/Modal";
+import { Textarea } from "../../components/ui/FormField";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { SkeletonList } from "../../components/ui/Skeleton";
 import { StaggerContainer, StaggerItem } from "../../components/motion/Stagger";
@@ -47,6 +48,7 @@ export default function StudentFacultyFeedback() {
   const [loading, setLoading] = useState(true);
   const [active, setActive] = useState<FeedbackTarget | null>(null);
   const [answers, setAnswers] = useState<Record<string, number>>({});
+  const [comment, setComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const toast = useToast();
 
@@ -71,6 +73,7 @@ export default function StudentFacultyFeedback() {
   function openTarget(t: FeedbackTarget) {
     setActive(t);
     setAnswers({});
+    setComment("");
   }
 
   const allAnswered = questions.length > 0 && questions.every((q) => answers[q.id] !== undefined);
@@ -83,6 +86,7 @@ export default function StudentFacultyFeedback() {
         facultyId: active.facultyId,
         subjectId: active.subjectId,
         answers: questions.map((q) => ({ questionId: q.id, rating: answers[q.id] })),
+        comment: comment.trim() || undefined,
       });
       toast.success("Feedback submitted successfully.");
       setActive(null);
@@ -176,6 +180,15 @@ export default function StudentFacultyFeedback() {
                 ))}
               </div>
             )}
+
+            <Textarea
+              label="Suggestion / Feedback (optional)"
+              placeholder="Anything else you'd like to share about this faculty member?"
+              rows={3}
+              maxLength={1000}
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+            />
 
             <div className="flex items-center justify-between gap-3 border-t border-slate-100 pt-4">
               <p className="text-xs text-slate-400">

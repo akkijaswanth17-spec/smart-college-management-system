@@ -330,6 +330,30 @@ export async function generateFacultyFeedbackReportPdf(data: FeedbackFacultyDeta
   pdf.setTextColor(GOLD);
   pdf.text(`FEEDBACK % : ${data.percentage.toFixed(2)}%`, pdf.internal.pageSize.getWidth() / 2, finalY + 30, { align: "center" });
 
+  if (data.comments.length > 0) {
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    let y = finalY + 58;
+
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(10);
+    pdf.setTextColor(NAVY);
+    pdf.text("STUDENT SUGGESTIONS / FEEDBACK", MARGIN, y);
+    y += 16;
+
+    pdf.setFont("helvetica", "italic");
+    pdf.setFontSize(9);
+    pdf.setTextColor(SLATE);
+    for (const comment of data.comments) {
+      const lines = pdf.splitTextToSize(`“${comment}”`, pageWidth - MARGIN * 2);
+      if (y + lines.length * 12 > pdf.internal.pageSize.getHeight() - 70) {
+        pdf.addPage();
+        y = MARGIN;
+      }
+      pdf.text(lines, MARGIN, y);
+      y += lines.length * 12 + 8;
+    }
+  }
+
   addFooter(pdf, generatedBy);
   pdf.save(`Feedback_${data.facultyId}_${data.subjectCode}.pdf`);
 }
