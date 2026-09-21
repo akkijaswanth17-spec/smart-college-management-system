@@ -9,6 +9,7 @@ import {
   Search,
   Users,
   User,
+  MessageSquareText,
 } from "lucide-react";
 import { DashboardLayout, NavItem } from "./DashboardLayout";
 
@@ -21,6 +22,7 @@ const navItems: NavItem[] = [
   { label: "Academic Updates", to: "/faculty/academic-updates", icon: BookOpen },
   { label: "Lost & Found", to: "/faculty/lost-found", icon: Search },
   { label: "Students", to: "/faculty/students", icon: Users },
+  { label: "Faculty Feedback", to: "/faculty/feedback", icon: MessageSquareText },
   { label: "Profile", to: "/faculty/profile", icon: User },
 ];
 

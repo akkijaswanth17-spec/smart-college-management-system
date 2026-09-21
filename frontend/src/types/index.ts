@@ -376,3 +376,77 @@ export interface FacultyDetailsReportData {
     year: number;
   }[];
 }
+
+// ============================================================
+// FACULTY FEEDBACK
+// ============================================================
+
+export interface FeedbackQuestion {
+  id: string;
+  text: string;
+  order: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface FeedbackTarget {
+  facultyId: string;
+  facultyName: string;
+  subjectId: string;
+  subjectName: string;
+  subjectCode: string;
+  submitted: boolean;
+}
+
+export interface FeedbackTargetsResponse {
+  academicYear: string;
+  pendingCount: number;
+  targets: FeedbackTarget[];
+}
+
+export interface FeedbackClassReportRow {
+  facultyId: string;
+  facultyName: string;
+  subjectId: string;
+  subjectName: string;
+  subjectCode: string;
+  percentage: number | null;
+}
+
+export interface FeedbackFacultyListRow {
+  facultyId: string;
+  facultyName: string;
+  subjectId: string;
+  subjectName: string;
+  subjectCode: string;
+}
+
+export type FeedbackQuestionCounts = Record<"1" | "2" | "3" | "4" | "5", number>;
+
+export interface FeedbackQuestionDetail {
+  id: string;
+  text: string;
+  counts: { 1: number; 2: number; 3: number; 4: number; 5: number };
+}
+
+export interface FeedbackFacultyDetail {
+  facultyId: string;
+  facultyName: string;
+  subjectId: string;
+  subjectName: string;
+  subjectCode: string;
+  departmentName: string;
+  departmentCode: string;
+  year: number;
+  section: string;
+  academicYear: string;
+  submissionCount: number;
+  percentage: number;
+  questions: FeedbackQuestionDetail[];
+}
+
+export interface FeedbackPublishStatus {
+  published: boolean;
+  publishedAt: string | null;
+}

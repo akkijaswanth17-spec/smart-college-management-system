@@ -12,6 +12,7 @@ import {
   CalendarDays,
   ClipboardList,
   FolderOpen,
+  Star,
 } from "lucide-react";
 import { DashboardLayout, NavItem } from "./DashboardLayout";
 
@@ -21,6 +22,7 @@ const navItems: NavItem[] = [
   { label: "Notices", to: "/student/notices", icon: Megaphone },
   { label: "Academic Updates", to: "/student/academic-updates", icon: BookOpen },
   { label: "Study Materials", to: "/student/study-materials", icon: FolderOpen },
+  { label: "Faculty Feedback", to: "/student/feedback", icon: Star },
   { label: "Lost & Found", to: "/student/lost-found", icon: Search },
   { label: "Fee Payment", to: "/student/fees", icon: CreditCard },
   { label: "Results", to: "/student/results", icon: GraduationCap },

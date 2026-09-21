@@ -18,6 +18,8 @@ import {
   User,
   TrendingUp,
   FolderOpen,
+  MessageSquareText,
+  ListChecks,
 } from "lucide-react";
 import { DashboardLayout, NavItem } from "./DashboardLayout";
 
@@ -44,6 +46,12 @@ const navItems: NavItem[] = [
   { label: "Marks", to: "/admin/marks", icon: FileSpreadsheet },
   { label: "Promotions", to: "/admin/promotions", icon: TrendingUp },
   { label: "Study Materials", to: "/admin/study-materials", icon: FolderOpen },
+  {
+    label: "Faculty Feedback",
+    to: "/admin/faculty-feedback",
+    icon: MessageSquareText,
+    children: [{ label: "Feedback Questions", to: "/admin/feedback-questions", icon: ListChecks }],
+  },
   { label: "Branch Accounts", to: "/admin/branch-accounts", icon: Building2 },
   { label: "Reports", to: "/admin/reports", icon: BarChart3 },
   { label: "Audit Logs", to: "/admin/audit-logs", icon: ClipboardList },

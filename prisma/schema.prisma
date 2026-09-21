@@ -147,6 +147,7 @@ model User {
   uploadedMaterials StudyMaterial[]  @relation("StudyMaterialUploadedBy")
   updatedSettings   Setting[]
   passwordResetCodes PasswordResetCode[]
+  publishedFeedbacks FeedbackPublish[]
   pushSubscriptions PushSubscription[]
 
   @@map("users")
@@ -207,6 +208,7 @@ model Student {
   department      Department       @relation(fields: [departmentId], references: [id])
   whatsappRequests WhatsAppRequest[]
   marks           Mark[]
+  feedbackSubmissions FeedbackSubmission[]
 
   @@index([departmentId])
   @@map("students")
@@ -229,6 +231,7 @@ model Faculty {
   department      Department        @relation(fields: [departmentId], references: [id])
   timetableEntries TimetableEntry[]
   classReminders  ClassReminder[]
+  feedbackSubmissions FeedbackSubmission[]
 
   @@index([departmentId])
   @@map("faculty")
@@ -282,6 +285,8 @@ model Department {
   branchAdmin  BranchAdmin?
   notices      Notice[]
   materials    StudyMaterial[]
+  feedbackSubmissions FeedbackSubmission[]
+  feedbackPublishes   FeedbackPublish[]
 
   @@map("departments")
 }
@@ -295,6 +300,7 @@ model Subject {
   department      Department       @relation(fields: [departmentId], references: [id])
   timetableEntries TimetableEntry[]
   marks           Mark[]
+  feedbackSubmissions FeedbackSubmission[]
 
   @@map("subjects")
 }
@@ -574,6 +580,82 @@ model WhatsAppRequest {
 
   @@index([status])
   @@map("whatsapp_requests")
+}
+
+// ============================================================
+// FACULTY FEEDBACK
+// ============================================================
+
+// Admin-configured questionnaire — every ACTIVE question is asked for
+// every faculty/subject a student is submitting feedback for.
+model FeedbackQuestion {
+  id        String   @id @default(cuid())
+  text      String
+  order     Int      @default(0)
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  answers FeedbackAnswer[]
+
+  @@map("feedback_questions")
+}
+
+// One row per student submission for one faculty/subject — the unique
+// constraint is what stops a student submitting twice for the same
+// faculty+subject+academicYear (the "feedback cycle" this project uses).
+model FeedbackSubmission {
+  id           String   @id @default(cuid())
+  studentId    String   @map("student_id")
+  facultyId    String   @map("faculty_id")
+  subjectId    String   @map("subject_id")
+  departmentId String   @map("department_id")
+  year         Int
+  section      String
+  academicYear String   @map("academic_year")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  student    Student    @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  faculty    Faculty    @relation(fields: [facultyId], references: [id])
+  subject    Subject    @relation(fields: [subjectId], references: [id])
+  department Department @relation(fields: [departmentId], references: [id])
+  answers    FeedbackAnswer[]
+
+  @@unique([studentId, facultyId, subjectId, academicYear])
+  @@index([facultyId, subjectId, departmentId, year, section, academicYear])
+  @@map("feedback_submissions")
+}
+
+model FeedbackAnswer {
+  id           String @id @default(cuid())
+  submissionId String @map("submission_id")
+  questionId   String @map("question_id")
+  rating       Int
+
+  submission FeedbackSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  question   FeedbackQuestion   @relation(fields: [questionId], references: [id])
+
+  @@unique([submissionId, questionId])
+  @@map("feedback_answers")
+}
+
+// Admin's POST/publish action — feedback for a whole class (department +
+// year + section + academicYear) stays invisible to Faculty until this
+// record exists; see feedback.controller.ts's getMyFeedback.
+model FeedbackPublish {
+  id            String   @id @default(cuid())
+  departmentId  String   @map("department_id")
+  year          Int
+  section       String
+  academicYear  String   @map("academic_year")
+  publishedById String   @map("published_by_id")
+  publishedAt   DateTime @default(now()) @map("published_at")
+
+  department  Department @relation(fields: [departmentId], references: [id])
+  publishedBy User       @relation(fields: [publishedById], references: [id])
+
+  @@unique([departmentId, year, section, academicYear])
+  @@map("feedback_publishes")
 }
 
 // ============================================================

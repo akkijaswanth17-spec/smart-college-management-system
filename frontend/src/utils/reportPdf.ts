@@ -4,7 +4,14 @@
 import type { jsPDF as JsPDF } from "jspdf";
 import logoUrl from "../assets/college-logo.jpeg";
 import { COLLEGE_NAME } from "../constants";
-import { StudentDetailsReportData, StudentMarksReportData, FacultyDetailsReportData, MarksColumns } from "../types";
+import {
+  StudentDetailsReportData,
+  StudentMarksReportData,
+  FacultyDetailsReportData,
+  MarksColumns,
+  FeedbackClassReportRow,
+  FeedbackFacultyDetail,
+} from "../types";
 import { shortAcademicYear } from "./format";
 
 const NAVY = "#071a33";
@@ -242,4 +249,87 @@ export async function generateFacultyDetailsPdf(data: FacultyDetailsReportData, 
 
   addFooter(pdf, generatedBy);
   pdf.save(`Faculty_Details_${data.facultyId}.pdf`);
+}
+
+export interface FeedbackClassReportData {
+  department: string;
+  departmentCode: string;
+  year: number;
+  section: string;
+  academicYear: string;
+  rows: FeedbackClassReportRow[];
+}
+
+export async function generateFeedbackClassReportPdf(data: FeedbackClassReportData, generatedBy: string) {
+  const [{ jsPDF }, { default: autoTable }] = await Promise.all([import("jspdf"), import("jspdf-autotable")]);
+  const pdf = new jsPDF({ unit: "pt", format: "a4" });
+  const startY = await addHeader(pdf, "Faculty Feedback Report", data.academicYear);
+
+  const y = fieldRows(pdf, startY + 10, [
+    ["Department", `${data.department} (${data.departmentCode})`],
+    ["Year / Section", `Year ${data.year} - ${data.section}`],
+    ["Academic Year", data.academicYear],
+    ["Date", new Date().toLocaleDateString("en-IN", { dateStyle: "medium" })],
+  ]);
+
+  if (data.rows.length === 0) {
+    pdf.setFont("helvetica", "italic");
+    pdf.setFontSize(10);
+    pdf.setTextColor(SLATE);
+    pdf.text("No feedback has been submitted for this class yet.", MARGIN, y + 20);
+  } else {
+    autoTable(pdf, {
+      startY: y + 10,
+      margin: { left: MARGIN, right: MARGIN },
+      head: [["Subject", "Faculty Name", "Percentage"]],
+      body: data.rows.map((r) => [r.subjectName, r.facultyName, r.percentage === null ? "—" : `${r.percentage.toFixed(2)}%`]),
+      headStyles: { fillColor: [7, 26, 51], textColor: 255, fontStyle: "bold" },
+      styles: { fontSize: 9, textColor: [7, 26, 51] },
+      alternateRowStyles: { fillColor: [248, 246, 240] },
+    });
+  }
+
+  addFooter(pdf, generatedBy);
+  pdf.save(`Faculty_Feedback_Report_${data.departmentCode}_Y${data.year}${data.section}.pdf`);
+}
+
+export async function generateFacultyFeedbackReportPdf(data: FeedbackFacultyDetail, generatedBy: string) {
+  const [{ jsPDF }, { default: autoTable }] = await Promise.all([import("jspdf"), import("jspdf-autotable")]);
+  const pdf = new jsPDF({ unit: "pt", format: "a4" });
+  const startY = await addHeader(
+    pdf,
+    `Feedback Analysis Report : ${data.departmentCode}-${data.section} ${data.year} Sem`,
+    data.academicYear
+  );
+
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(11);
+  pdf.setTextColor(NAVY);
+  pdf.text(`${data.subjectName} - ${data.facultyName}`, pdf.internal.pageSize.getWidth() / 2, startY + 6, { align: "center" });
+
+  autoTable(pdf, {
+    startY: startY + 24,
+    margin: { left: MARGIN, right: MARGIN },
+    head: [["Questionnaire", "5", "4", "3", "2", "1"]],
+    body: data.questions.map((q) => [q.text, q.counts[5], q.counts[4], q.counts[3], q.counts[2], q.counts[1]]),
+    headStyles: { fillColor: [7, 26, 51], textColor: 255, fontStyle: "bold" },
+    styles: { fontSize: 9, textColor: [7, 26, 51] },
+    columnStyles: {
+      1: { halign: "center" },
+      2: { halign: "center" },
+      3: { halign: "center" },
+      4: { halign: "center" },
+      5: { halign: "center" },
+    },
+    alternateRowStyles: { fillColor: [248, 246, 240] },
+  });
+
+  const finalY = (pdf as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY;
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(12);
+  pdf.setTextColor(GOLD);
+  pdf.text(`FEEDBACK % : ${data.percentage.toFixed(2)}%`, pdf.internal.pageSize.getWidth() / 2, finalY + 30, { align: "center" });
+
+  addFooter(pdf, generatedBy);
+  pdf.save(`Feedback_${data.facultyId}_${data.subjectCode}.pdf`);
 }

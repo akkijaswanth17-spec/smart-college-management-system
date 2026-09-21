@@ -19,6 +19,7 @@ import branchAdminRoutes from "./branchAdmin.routes";
 import reportsRoutes from "./reports.routes";
 import promotionRoutes from "./promotion.routes";
 import studyMaterialRoutes from "./studyMaterial.routes";
+import feedbackRoutes from "./feedback.routes";
 
 const router = Router();
 
@@ -42,5 +43,6 @@ router.use("/branch-admins", branchAdminRoutes);
 router.use("/reports", reportsRoutes);
 router.use("/promotions", promotionRoutes);
 router.use("/study-materials", studyMaterialRoutes);
+router.use("/feedback", feedbackRoutes);
 
 export default router;

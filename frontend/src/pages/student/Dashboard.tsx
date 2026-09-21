@@ -11,9 +11,12 @@ import {
   CalendarDays,
   Clock,
   Radio,
+  Star,
+  CheckCircle2,
 } from "lucide-react";
 import { CardBody } from "../../components/ui/Card";
 import { Badge } from "../../components/ui/Badge";
+import { Button } from "../../components/ui/Button";
 import { StatCard } from "../../components/ui/StatCard";
 import { SectionHeader } from "../../components/ui/SectionHeader";
 import { DashboardHero, HeroStatusBadge } from "../../components/dashboard/DashboardHero";
@@ -30,6 +33,7 @@ import { DayOfWeek } from "../../types";
 import { noticesService } from "../../services/notices.service";
 import { academicUpdatesService } from "../../services/academicUpdates.service";
 import { whatsappService } from "../../services/whatsapp.service";
+import { feedbackService } from "../../services/feedback.service";
 import { formatDate, titleCase } from "../../utils/format";
 import { Notice, AcademicUpdate } from "../../types";
 
@@ -109,6 +113,8 @@ export default function StudentDashboard() {
   const [updates, setUpdates] = useState<AcademicUpdate[]>([]);
   const [noticesTotal, setNoticesTotal] = useState(0);
   const [pendingRequests, setPendingRequests] = useState(0);
+  const [feedbackTargetCount, setFeedbackTargetCount] = useState(0);
+  const [feedbackPendingCount, setFeedbackPendingCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const { entries, todaysSchedule, liveClass, nextClass, loading: scheduleLoading } = useStudentSchedule(student);
   const now = useClock(1000);
@@ -126,12 +132,15 @@ export default function StudentDashboard() {
       noticesService.list({ pageSize: 5 }),
       academicUpdatesService.list({ pageSize: 5, departmentId: student?.departmentId }),
       whatsappService.myRequests(),
+      feedbackService.myTargets(),
     ])
-      .then(([n, u, r]) => {
+      .then(([n, u, r, f]) => {
         setNotices(n.data);
         setNoticesTotal(n.meta.total);
         setUpdates(u.data);
         setPendingRequests(r.filter((req) => req.status === "PENDING").length);
+        setFeedbackTargetCount(f.targets.length);
+        setFeedbackPendingCount(f.pendingCount);
       })
       .finally(() => setLoading(false));
   }, [student?.departmentId]);
@@ -179,6 +188,37 @@ export default function StudentDashboard() {
       {/* Main + sidebar: what to DO on the left, what to KNOW on the right */}
       <div className="grid gap-6 lg:grid-cols-12">
         <div className="space-y-6 lg:col-span-8">
+          {/* Faculty Feedback prompt */}
+          {!loading && (
+            <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-gold-200 bg-gold-50 px-5 py-4">
+              <div className="flex items-start gap-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-gold-600 shadow-sm">
+                  <Star className="h-5 w-5" />
+                </span>
+                <div>
+                  <p className="font-serif font-semibold text-brand-950">Faculty Feedback</p>
+                  <p className="text-xs text-slate-500">Give feedback for your faculty members based on your timetable.</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                {feedbackPendingCount > 0 && (
+                  <span className="text-xs font-semibold text-brand-700">
+                    {feedbackPendingCount} Feedback{feedbackPendingCount === 1 ? "" : "s"} Pending
+                  </span>
+                )}
+                <Link to="/student/feedback">
+                  {feedbackPendingCount === 0 && feedbackTargetCount > 0 ? (
+                    <Button size="sm" variant="outline">
+                      <CheckCircle2 className="h-3.5 w-3.5" /> Completed
+                    </Button>
+                  ) : (
+                    <Button size="sm">Give Feedback</Button>
+                  )}
+                </Link>
+              </div>
+            </div>
+          )}
+
           {/* Today's schedule strip */}
           <div>
             <SectionHeader
