@@ -12,6 +12,7 @@ import { Input, Select } from "../../components/ui/FormField";
 import { Modal } from "../../components/ui/Modal";
 import { ConfirmDialog } from "../../components/ui/ConfirmDialog";
 import { EmptyState } from "../../components/ui/EmptyState";
+import { Pagination } from "../../components/ui/Pagination";
 import { SkeletonCardGrid } from "../../components/ui/Skeleton";
 import { useToast } from "../../context/ToastContext";
 import { getErrorMessage } from "../../services/api";
@@ -34,10 +35,8 @@ const emptyCreateForm = {
 export default function AdminStudents() {
   const [search, setSearch] = useState("");
   const departments = useDepartmentOptions();
-  // Every match loads in one page — see listStudents on the backend for the raised cap.
-  const { items, loading, reload } = usePaginatedList<StudentProfile>(studentsService.list, {
+  const { items, meta, page, setPage, loading, reload } = usePaginatedList<StudentProfile>(studentsService.list, {
     search: search || undefined,
-    pageSize: 1000,
   });
 
   const [createOpen, setCreateOpen] = useState(false);
@@ -223,6 +222,9 @@ export default function AdminStudents() {
               );
             })}
           </div>
+          <Card>
+            <Pagination meta={{ ...meta, page }} onPageChange={setPage} />
+          </Card>
         </>
       )}
 
