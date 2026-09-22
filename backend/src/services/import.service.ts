@@ -180,12 +180,20 @@ function placeholderEmail(studentId: string): string {
 // unlike a sheet's tab name or an optional department column.
 const ROLL_NO_BRANCH_CODES: Record<string, string> = {
   CM: "DCME",
+  DCME: "DCME",
   EC: "ECE",
+  DECE: "ECE",
   EE: "EEE",
+  DEEE: "EEE",
   ME: "MECH",
   M: "MECH",
+  DME: "MECH",
   CE: "CIVIL",
+  C: "CIVIL",
+  DCE: "CIVIL",
   AM: "AIML",
+  AIM: "AIML",
+  DAIML: "AIML",
 };
 
 function departmentCodeFromRollNo(rollNo: string): string | undefined {
@@ -225,16 +233,20 @@ function normalizeSectionValue(raw?: string): string | undefined {
 
 const YEAR_OR_SEM_WORDS = new Set(["YEAR", "YR", "SEM", "SEMESTER"]);
 
-/** Pulls a section letter out of a sheet tab name like "III Year DCME II" or "V Sem
- * DCME Section-II" — skipping the Roman numeral right before "Year"/"Sem", since
- * that one is the year/semester, not the section. */
+/** Pulls a section letter out of a sheet tab name like "III Year DCME II", "V Sem
+ * DCME Section-II", or "II DCME III SEM A" — a name can carry up to two Roman
+ * numerals (year and semester), and only a trailing one that isn't either of
+ * those is actually the section. Skips: the very first token if it's a Roman
+ * numeral (always the leading year marker), and any Roman numeral immediately
+ * followed by "Year"/"Sem"/etc. */
 function sectionFromSheetName(sheetName: string): string | undefined {
   const tokens = sheetName.toUpperCase().match(/[A-Z]+/g) ?? [];
   for (let i = 0; i < tokens.length; i++) {
     const token = tokens[i];
     const next = tokens[i + 1];
+    const isLeadingYearRoman = i === 0 && !!ROMAN_TO_SECTION_LETTER[token];
     const isYearOrSemRoman = !!next && YEAR_OR_SEM_WORDS.has(next) && !!ROMAN_TO_SECTION_LETTER[token];
-    if (isYearOrSemRoman) continue;
+    if (isLeadingYearRoman || isYearOrSemRoman) continue;
     const normalized = normalizeSectionValue(token);
     if (normalized && /^[A-F]$/.test(normalized)) return normalized;
   }
