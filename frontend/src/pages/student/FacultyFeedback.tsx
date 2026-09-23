@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Star, CheckCircle2, MessageSquareText } from "lucide-react";
+import { Star, CheckCircle2, MessageSquareText, Send } from "lucide-react";
 import { Card } from "../../components/ui/Card";
 import { Badge } from "../../components/ui/Badge";
 import { Button } from "../../components/ui/Button";
@@ -106,6 +106,12 @@ export default function StudentFacultyFeedback() {
 
   const pending = targets.filter((t) => !t.submitted);
   const submitted = targets.filter((t) => t.submitted);
+  const allSubmitted = targets.length > 0 && pending.length === 0;
+
+  function handleOverallSubmit() {
+    if (!allSubmitted) return;
+    toast.success("All feedback submitted successfully. Thank you!");
+  }
 
   return (
     <div className="space-y-6">
@@ -166,6 +172,28 @@ export default function StudentFacultyFeedback() {
             </StaggerItem>
           ))}
         </StaggerContainer>
+      )}
+
+      {!loading && enabled && targets.length > 0 && (
+        <div
+          className={`flex flex-wrap items-center justify-between gap-4 rounded-2xl border px-5 py-4 ${
+            allSubmitted ? "border-emerald-200 bg-emerald-50" : "border-slate-200 bg-slate-50"
+          }`}
+        >
+          <div>
+            <p className="font-serif font-semibold text-brand-950">
+              {allSubmitted ? "All faculty feedback completed" : `${pending.length} Feedback${pending.length === 1 ? "" : "s"} Pending`}
+            </p>
+            <p className="text-xs text-slate-500">
+              {allSubmitted
+                ? "You've given feedback for every faculty member — thank you."
+                : "Give feedback for every faculty member above to enable Overall Submit."}
+            </p>
+          </div>
+          <Button onClick={handleOverallSubmit} disabled={!allSubmitted} size="lg">
+            <Send className="h-4 w-4" /> Overall Submit
+          </Button>
+        </div>
       )}
 
       <Modal open={!!active} onClose={() => setActive(null)} title="Give Feedback" maxWidth="max-w-2xl">
