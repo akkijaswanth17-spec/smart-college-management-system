@@ -6,6 +6,7 @@ import {
   FeedbackFacultyListRow,
   FeedbackFacultyDetail,
   FeedbackPublishStatus,
+  FeedbackSubmissionStatus,
 } from "../types";
 
 export interface FeedbackReportParams {
@@ -81,6 +82,10 @@ export const feedbackService = {
   },
   async publishStatus(params: FeedbackReportParams) {
     const res = await api.get<{ data: FeedbackPublishStatus }>("/feedback/publish-status", { params });
+    return res.data.data;
+  },
+  async submissionStatus(params: FeedbackReportParams) {
+    const res = await api.get<{ data: FeedbackSubmissionStatus }>("/feedback/submission-status", { params });
     return res.data.data;
   },
   async publish(params: FeedbackReportParams) {

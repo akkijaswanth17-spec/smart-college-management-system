@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { MessageSquareText, Download, Send, CheckCircle2 } from "lucide-react";
+import { MessageSquareText, Download, Send, CheckCircle2, Users, XCircle } from "lucide-react";
 import { Card, CardHeader, CardBody } from "../../components/ui/Card";
+import { Badge } from "../../components/ui/Badge";
 import { Button } from "../../components/ui/Button";
 import { Select } from "../../components/ui/FormField";
 import { ConfirmDialog } from "../../components/ui/ConfirmDialog";
@@ -17,11 +18,17 @@ import { feedbackService } from "../../services/feedback.service";
 import { generateFeedbackClassReportPdf, generateFacultyFeedbackReportPdf } from "../../utils/reportPdf";
 import { useDepartmentOptions } from "../../hooks/useDepartmentOptions";
 import { CLASS_OPTIONS, SECTION_OPTIONS, ACADEMIC_YEAR_OPTIONS } from "../../constants/academicClass";
-import { FeedbackClassReportRow, FeedbackFacultyListRow, FeedbackFacultyDetail, FeedbackPublishStatus } from "../../types";
+import {
+  FeedbackClassReportRow,
+  FeedbackFacultyListRow,
+  FeedbackFacultyDetail,
+  FeedbackPublishStatus,
+  FeedbackSubmissionStatus,
+} from "../../types";
 
 const currentAcademicYear = `${new Date().getFullYear()}-${new Date().getFullYear() + 1}`;
 
-type Tab = "class" | "faculty";
+type Tab = "class" | "faculty" | "status";
 
 function ClassReportFieldGrid({
   department,
@@ -204,6 +211,23 @@ export function FacultyFeedback() {
     }
   }
 
+  // Tab 3 — Feedback Submitted (per-student status)
+  const [submissionStatus, setSubmissionStatus] = useState<FeedbackSubmissionStatus | null>(null);
+  const [loadingSubmissionStatus, setLoadingSubmissionStatus] = useState(false);
+
+  async function loadSubmissionStatus() {
+    if (!canLoad) return;
+    setLoadingSubmissionStatus(true);
+    setSubmissionStatus(null);
+    try {
+      setSubmissionStatus(await feedbackService.submissionStatus(params));
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setLoadingSubmissionStatus(false);
+    }
+  }
+
   const filterRow = (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
       <Select label="Department" value={departmentId} onChange={(e) => setDepartmentId(e.target.value)}>
@@ -268,6 +292,14 @@ export function FacultyFeedback() {
           >
             Faculty-wise Feedback Analysis
           </button>
+          <button
+            onClick={() => setTab("status")}
+            className={`rounded-md px-3.5 py-1.5 text-sm font-semibold transition-colors ${
+              tab === "status" ? "bg-white text-brand-800 shadow-sm" : "text-slate-500 hover:text-slate-700"
+            }`}
+          >
+            Feedback Submitted
+          </button>
         </div>
 
         {filterRow}
@@ -307,7 +339,7 @@ export function FacultyFeedback() {
               </div>
             )}
           </div>
-        ) : (
+        ) : tab === "faculty" ? (
           <div className="space-y-4">
             <Button onClick={loadFacultyList} disabled={!canLoad} loading={loadingFacultyList}>
               Load Faculty
@@ -355,6 +387,67 @@ export function FacultyFeedback() {
                     {publishStatus?.published ? <CheckCircle2 className="h-4 w-4" /> : <Send className="h-4 w-4" />}
                     {publishStatus?.published ? "Re-Publish" : "POST"}
                   </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <Button onClick={loadSubmissionStatus} disabled={!canLoad} loading={loadingSubmissionStatus}>
+              Load Status
+            </Button>
+
+            {loadingSubmissionStatus && <SkeletonTable cols={4} />}
+
+            {!loadingSubmissionStatus && submissionStatus && submissionStatus.students.length === 0 && (
+              <EmptyState
+                icon={Users}
+                title="No students found"
+                description="No students match that department, year and section."
+              />
+            )}
+
+            {!loadingSubmissionStatus && submissionStatus && submissionStatus.students.length > 0 && (
+              <div className="space-y-3">
+                <p className="text-xs text-slate-500">
+                  Based on {submissionStatus.totalTargets} faculty/subject{submissionStatus.totalTargets === 1 ? "" : "s"} on this
+                  class's timetable — a student counts as "Submitted" only once feedback is given for every one of them.
+                </p>
+                <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="bg-slate-50 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                        <th className="px-4 py-3">Roll No</th>
+                        <th className="px-4 py-3">Student Name</th>
+                        <th className="px-4 py-3 text-center">Progress</th>
+                        <th className="px-4 py-3 text-right">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {submissionStatus.students.map((s, i) => (
+                        <tr key={s.studentId} className={i % 2 === 1 ? "bg-slate-50" : "bg-white"}>
+                          <td className="px-4 py-2.5 font-mono text-xs text-slate-600">{s.studentId}</td>
+                          <td className="px-4 py-2.5 font-medium text-slate-800">{s.fullName}</td>
+                          <td className="px-4 py-2.5 text-center text-slate-500">
+                            {s.submittedCount} / {s.totalTargets}
+                          </td>
+                          <td className="px-4 py-2.5 text-right">
+                            <Badge tone={s.submitted ? "green" : "amber"}>
+                              {s.submitted ? (
+                                <span className="flex items-center gap-1">
+                                  <CheckCircle2 className="h-3 w-3" /> Submitted
+                                </span>
+                              ) : (
+                                <span className="flex items-center gap-1">
+                                  <XCircle className="h-3 w-3" /> Not Submitted
+                                </span>
+                              )}
+                            </Badge>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             )}

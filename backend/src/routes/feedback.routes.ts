@@ -50,6 +50,12 @@ router.get(
   controller.getFeedbackFacultyDetail
 );
 router.get("/publish-status", requireRole("ADMIN"), validate(feedbackReportQuerySchema), controller.getFeedbackPublishStatus);
+router.get(
+  "/submission-status",
+  requireRole("ADMIN"),
+  validate(feedbackReportQuerySchema),
+  controller.getFeedbackSubmissionStatus
+);
 router.post("/publish", requireRole("ADMIN"), validate(publishFeedbackSchema), controller.publishFeedback);
 
 // Faculty — own already-published feedback only

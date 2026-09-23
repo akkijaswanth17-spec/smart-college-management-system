@@ -451,3 +451,16 @@ export interface FeedbackPublishStatus {
   published: boolean;
   publishedAt: string | null;
 }
+
+export interface FeedbackSubmissionStatusRow {
+  studentId: string;
+  fullName: string;
+  submittedCount: number;
+  totalTargets: number;
+  submitted: boolean;
+}
+
+export interface FeedbackSubmissionStatus {
+  totalTargets: number;
+  students: FeedbackSubmissionStatusRow[];
+}

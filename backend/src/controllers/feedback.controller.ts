@@ -448,6 +448,54 @@ export const getFeedbackPublishStatus = asyncHandler(async (req: Request, res: R
   res.json({ success: true, data: { published: !!publish, publishedAt: publish?.publishedAt ?? null } });
 });
 
+// Every student in the class vs who's actually completed feedback for ALL of
+// their own faculty/subjects — lets Admin chase down students who skipped it.
+export const getFeedbackSubmissionStatus = asyncHandler(async (req: Request, res: Response) => {
+  const { departmentId, year, section, academicYear } = req.query as Record<string, string>;
+  const yearNum = Number(year);
+
+  const [students, targets] = await Promise.all([
+    prisma.student.findMany({
+      where: { departmentId, year: yearNum, section },
+      orderBy: { studentId: "asc" },
+      select: { id: true, studentId: true, fullName: true },
+    }),
+    prisma.timetableEntry.findMany({
+      where: { departmentId, year: yearNum, section, isActive: true },
+      distinct: ["facultyId", "subjectId"],
+      select: { facultyId: true, subjectId: true },
+    }),
+  ]);
+
+  const totalTargets = targets.length;
+  const targetKeys = new Set(targets.map((t) => `${t.facultyId}:${t.subjectId}`));
+
+  const submissions = await prisma.feedbackSubmission.findMany({
+    where: { studentId: { in: students.map((s) => s.id) }, academicYear },
+    select: { studentId: true, facultyId: true, subjectId: true },
+  });
+  const submittedByStudent = new Map<string, Set<string>>();
+  for (const sub of submissions) {
+    const key = `${sub.facultyId}:${sub.subjectId}`;
+    if (!targetKeys.has(key)) continue; // ignore submissions for faculty no longer on this class's timetable
+    if (!submittedByStudent.has(sub.studentId)) submittedByStudent.set(sub.studentId, new Set());
+    submittedByStudent.get(sub.studentId)!.add(key);
+  }
+
+  const rows = students.map((s) => {
+    const submittedCount = submittedByStudent.get(s.id)?.size ?? 0;
+    return {
+      studentId: s.studentId,
+      fullName: s.fullName,
+      submittedCount,
+      totalTargets,
+      submitted: totalTargets > 0 && submittedCount >= totalTargets,
+    };
+  });
+
+  res.json({ success: true, data: { totalTargets, students: rows } });
+});
+
 export const publishFeedback = asyncHandler(async (req: Request, res: Response) => {
   const { departmentId, year, section, academicYear } = req.body as {
     departmentId: string;
