@@ -387,8 +387,8 @@ export default function AdminStudents() {
       {/* Credentials reveal (shown once) */}
       <Modal open={!!credentialResult} onClose={() => setCredentialResult(null)} title="Student Credentials" maxWidth="max-w-sm">
         <p className="text-sm text-slate-600">
-          Share these credentials securely with the student. They will be required to change their password on first
-          login. This password will not be shown again.
+          Share these credentials securely with the student. This is a permanent password — they are not required to
+          change it on first login. This password will not be shown again.
         </p>
         <div className="mt-4 space-y-2 rounded-xl bg-slate-50 p-4 font-mono text-sm">
           <p>

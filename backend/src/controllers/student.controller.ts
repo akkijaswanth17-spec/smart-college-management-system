@@ -33,7 +33,9 @@ export const createStudent = asyncHandler(async (req: Request, res: Response) =>
       email: normalizedEmail,
       passwordHash,
       role: "STUDENT",
-      mustChangePassword: true,
+      // The Roll Number is a permanent password for students, not a one-time
+      // temp password — never force a change on first login.
+      mustChangePassword: false,
       student: { create: { fullName, studentId, phone, departmentId, year, semester, section } },
     },
     include: { student: { include: { department: true } } },

@@ -380,7 +380,8 @@ export async function importStudents(
             email: p.email,
             passwordHash,
             role: "STUDENT",
-            mustChangePassword: true,
+            // The Roll Number is a permanent password for students — never force a change.
+            mustChangePassword: false,
             student: {
               create: { fullName: p.name, studentId: p.studentId, phone: p.phone, departmentId: p.departmentId, year: p.year, section: p.section },
             },
