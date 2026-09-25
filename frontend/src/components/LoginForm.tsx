@@ -34,7 +34,7 @@ export function LoginForm({ expectedRole, dashboardPath, altId }: LoginFormProps
     try {
       const user = await login(email, password);
       if (user.role !== expectedRole) {
-        await logout();
+        await logout(user.role);
         setError(`This sign-in page is for ${expectedRole.toLowerCase()} accounts only.`);
         return;
       }

@@ -5,6 +5,7 @@ import { prisma } from "../config/prisma";
 import { serializeUser } from "../utils/serializeUser";
 import { ApiError } from "../utils/apiError";
 import { env } from "../config/env";
+import { asSessionRole, cookieNameFor, LEGACY_COOKIE, requestedSessionRole } from "../utils/sessionCookie";
 
 const COOKIE_OPTIONS = {
   httpOnly: true,
@@ -16,12 +17,16 @@ const COOKIE_OPTIONS = {
 export const login = asyncHandler(async (req: Request, res: Response) => {
   const { email, password } = req.body;
   const result = await authService.login(email, password);
-  res.cookie("token", result.token, COOKIE_OPTIONS);
+  res.cookie(cookieNameFor(result.user.role), result.token, COOKIE_OPTIONS);
+  res.clearCookie(LEGACY_COOKIE);
   res.status(200).json({ success: true, data: result });
 });
 
-export const logout = asyncHandler(async (_req: Request, res: Response) => {
-  res.clearCookie("token");
+export const logout = asyncHandler(async (req: Request, res: Response) => {
+  // An explicit { role } (e.g. undoing a sign-in made on the wrong login page) wins over the tab's role.
+  const role = asSessionRole(req.body?.role) ?? requestedSessionRole(req);
+  if (role) res.clearCookie(cookieNameFor(role));
+  res.clearCookie(LEGACY_COOKIE);
   res.status(200).json({ success: true, message: "Logged out" });
 });
 

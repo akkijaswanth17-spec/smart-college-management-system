@@ -6,8 +6,9 @@ export async function login(email: string, password: string) {
   return res.data.data.user;
 }
 
-export async function logout() {
-  await api.post("/auth/logout");
+/** `role` signs out that role's session instead of this tab's (used to undo a sign-in on the wrong login page). */
+export async function logout(role?: string) {
+  await api.post("/auth/logout", role ? { role } : undefined);
 }
 
 export async function getMe() {

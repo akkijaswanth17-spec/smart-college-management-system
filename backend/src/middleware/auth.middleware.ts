@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import { verifyToken } from "../utils/jwt";
 import { ApiError } from "../utils/apiError";
 import { prisma } from "../config/prisma";
+import { sessionTokenFrom } from "../utils/sessionCookie";
 
 /**
  * Verifies the JWT, confirms the user still exists and is active, and
@@ -11,7 +12,7 @@ import { prisma } from "../config/prisma";
 export async function authenticate(req: Request, _res: Response, next: NextFunction) {
   try {
     const header = req.headers.authorization;
-    const token = header?.startsWith("Bearer ") ? header.slice(7) : req.cookies?.token;
+    const token = header?.startsWith("Bearer ") ? header.slice(7) : sessionTokenFrom(req);
 
     if (!token) {
       throw ApiError.unauthorized();
