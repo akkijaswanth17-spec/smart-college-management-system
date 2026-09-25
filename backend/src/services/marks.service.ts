@@ -126,7 +126,7 @@ export async function importMarks(rows: Record<string, string>[], importedById: 
     const lineNo = i + 2; // account for header row
 
     try {
-      const rollNumber = pickField(row, ["roll_number", "roll_no", "student_id"])?.trim();
+      const rollNumber = pickField(row, ["roll_number", "roll_no", "student_id"])?.trim().toUpperCase();
       const subjectIdentifier = pickField(row, ["subject", "subject_name", "subject_code"])?.trim();
       const academicYear = pickField(row, ["academic_year", "ay"])?.trim() || academicYearDefault;
 
@@ -210,7 +210,7 @@ export async function importMarksWide(
   }
   if (subjects.length === 0) throw ApiError.badRequest("This department has no subjects yet — add some under Timetable first");
 
-  const studentByRoll = new Map(students.map((s) => [s.studentId, s.id]));
+  const studentByRoll = new Map(students.map((s) => [s.studentId.toUpperCase(), s.id]));
 
   // Resolve each file column to a subject exactly once, up front, so a header
   // that doesn't match anything is reported clearly instead of silently ignored.
@@ -240,7 +240,7 @@ export async function importMarksWide(
     const lineNo = i + 2;
 
     try {
-      const rollNumber = pickField(row, ["pin_number", "roll_number", "roll_no", "student_id", "pin"])?.trim();
+      const rollNumber = pickField(row, ["pin_number", "roll_number", "roll_no", "student_id", "pin"])?.trim().toUpperCase();
       if (!rollNumber) throw new Error("Missing PIN Number / roll number");
 
       const studentId = studentByRoll.get(rollNumber);

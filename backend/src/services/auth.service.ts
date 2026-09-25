@@ -45,7 +45,7 @@ export async function login(identifier: string, password: string) {
   const candidates = await prisma.user.findMany({
     where: {
       OR: [
-        { student: { studentId: trimmed } },
+        { student: { studentId: { equals: trimmed, mode: "insensitive" } } },
         { faculty: { facultyId: trimmed } },
         { branchAdmin: { branchId: trimmed } },
       ],

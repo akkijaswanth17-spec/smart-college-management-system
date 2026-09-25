@@ -293,7 +293,7 @@ export async function importStudents(
     try {
       const name = row.name?.trim();
       // "roll_no" is the current column name — "student_id" still accepted for older sheets.
-      const studentId = row.roll_no?.trim() || row.student_id?.trim();
+      const studentId = (row.roll_no?.trim() || row.student_id?.trim())?.toUpperCase();
 
       if (!name || !studentId) {
         throw new Error("Missing required field(s): roll_no, name");
