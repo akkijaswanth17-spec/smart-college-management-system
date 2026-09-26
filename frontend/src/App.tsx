@@ -27,6 +27,7 @@ import StudentResults from "./pages/student/Results";
 import StudentMarks from "./pages/student/Marks";
 import StudentStudyMaterials from "./pages/student/StudyMaterials";
 import StudentFacultyFeedback from "./pages/student/FacultyFeedback";
+import StudentGiveFeedback from "./pages/student/GiveFeedback";
 import StudentWhatsApp from "./pages/student/WhatsApp";
 import StudentNotifications from "./pages/student/Notifications";
 import StudentProfile from "./pages/student/Profile";
@@ -98,6 +99,7 @@ export default function App() {
                 <Route path="marks" element={<StudentMarks />} />
                 <Route path="study-materials" element={<StudentStudyMaterials />} />
                 <Route path="feedback" element={<StudentFacultyFeedback />} />
+                <Route path="feedback/:facultyId/:subjectId" element={<StudentGiveFeedback />} />
                 <Route path="whatsapp" element={<StudentWhatsApp />} />
                 <Route path="notifications" element={<StudentNotifications />} />
                 <Route path="profile" element={<StudentProfile />} />
