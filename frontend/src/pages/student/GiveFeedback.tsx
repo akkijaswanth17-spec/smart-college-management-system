@@ -84,6 +84,7 @@ export default function StudentGiveFeedback() {
   }
 
   return (
+    <div className="min-h-screen bg-slate-50 px-4 py-6 sm:px-8 sm:py-10">
     <div className="mx-auto max-w-4xl space-y-6">
       <Link
         to="/student/feedback"
@@ -147,7 +148,7 @@ export default function StudentGiveFeedback() {
             onChange={(e) => setComment(e.target.value)}
           />
 
-          <div className="sticky bottom-0 -mx-1 flex items-center justify-between gap-3 border-t border-slate-200 bg-white/95 px-1 py-4 backdrop-blur">
+          <div className="sticky bottom-0 -mx-1 flex items-center justify-between gap-3 border-t border-slate-200 bg-slate-50/95 px-1 py-4 backdrop-blur">
             <p className="text-sm text-slate-500">
               {answeredCount} / {questions.length} answered
             </p>
@@ -162,6 +163,7 @@ export default function StudentGiveFeedback() {
           </div>
         </>
       )}
+    </div>
     </div>
   );
 }

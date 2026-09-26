@@ -99,11 +99,12 @@ export default function App() {
                 <Route path="marks" element={<StudentMarks />} />
                 <Route path="study-materials" element={<StudentStudyMaterials />} />
                 <Route path="feedback" element={<StudentFacultyFeedback />} />
-                <Route path="feedback/:facultyId/:subjectId" element={<StudentGiveFeedback />} />
                 <Route path="whatsapp" element={<StudentWhatsApp />} />
                 <Route path="notifications" element={<StudentNotifications />} />
                 <Route path="profile" element={<StudentProfile />} />
               </Route>
+              {/* Full-screen (no sidebar/top bar) so students can focus on the rating form */}
+              <Route path="/student/feedback/:facultyId/:subjectId" element={<StudentGiveFeedback />} />
             </Route>
 
             {/* Faculty */}
