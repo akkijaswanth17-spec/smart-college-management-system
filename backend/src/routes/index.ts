@@ -20,6 +20,7 @@ import reportsRoutes from "./reports.routes";
 import promotionRoutes from "./promotion.routes";
 import studyMaterialRoutes from "./studyMaterial.routes";
 import feedbackRoutes from "./feedback.routes";
+import attendanceRoutes from "./attendance.routes";
 
 const router = Router();
 
@@ -44,5 +45,6 @@ router.use("/reports", reportsRoutes);
 router.use("/promotions", promotionRoutes);
 router.use("/study-materials", studyMaterialRoutes);
 router.use("/feedback", feedbackRoutes);
+router.use("/attendance", attendanceRoutes);
 
 export default router;

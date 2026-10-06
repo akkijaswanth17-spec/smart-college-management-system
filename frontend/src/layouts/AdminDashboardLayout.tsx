@@ -20,6 +20,7 @@ import {
   FolderOpen,
   MessageSquareText,
   ListChecks,
+  CalendarCheck,
 } from "lucide-react";
 import { DashboardLayout, NavItem } from "./DashboardLayout";
 
@@ -27,6 +28,7 @@ const navItems: NavItem[] = [
   { label: "Dashboard", to: "/admin/dashboard", icon: LayoutDashboard, end: true },
   { label: "Students", to: "/admin/students", icon: Users },
   { label: "Faculty", to: "/admin/faculty", icon: GraduationCap },
+  { label: "Attendance", to: "/admin/attendance", icon: CalendarCheck },
   {
     label: "Timetable",
     to: "/admin/timetable",

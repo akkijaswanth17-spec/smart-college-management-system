@@ -464,3 +464,114 @@ export interface FeedbackSubmissionStatus {
   totalTargets: number;
   students: FeedbackSubmissionStatusRow[];
 }
+
+// ============================================================
+// ATTENDANCE
+// ============================================================
+
+export type AttendanceStatus = "PRESENT" | "ABSENT";
+
+export interface AttendancePeriod {
+  id: string;
+  period: number;
+  startTime: string;
+  endTime: string;
+  subject: { id: string; name: string; code: string };
+  faculty?: { id: string; fullName: string; title: string | null };
+  departmentId?: string;
+  year?: number;
+  section?: string;
+  alreadyTaken: boolean;
+}
+
+export interface MyTodayPeriodsResponse {
+  date: string;
+  day: string;
+  currentPeriodId: string | null;
+  periods: AttendancePeriod[];
+}
+
+export interface ClassTodayPeriodsResponse {
+  date: string;
+  day: string;
+  periods: AttendancePeriod[];
+}
+
+export interface AttendanceRosterStudent {
+  studentId: string;
+  rollNumber: string;
+  fullName: string;
+  status: AttendanceStatus;
+}
+
+export interface AttendanceRosterResponse {
+  period: {
+    id: string;
+    startTime: string;
+    endTime: string;
+    year: number;
+    section: string;
+    faculty: { id: string; fullName: string; title: string | null };
+    subject: { id: string; name: string; code: string };
+    department: { id: string; name: string; code: string };
+  };
+  date: string;
+  alreadyTaken: boolean;
+  students: AttendanceRosterStudent[];
+}
+
+export interface AttendanceSubjectStat {
+  subjectName: string;
+  subjectCode: string;
+  present: number;
+  absent: number;
+  total: number;
+  percentage: number;
+}
+
+export interface AttendanceClassReportRow {
+  studentId: string;
+  fullName: string;
+  present: number;
+  absent: number;
+  total: number;
+  percentage: number;
+  subjects: (AttendanceSubjectStat & { subjectId: string })[];
+}
+
+export interface MyAttendanceResponse {
+  present: number;
+  absent: number;
+  total: number;
+  percentage: number;
+  threshold: number;
+  lowAttendance: boolean;
+  subjects: AttendanceSubjectStat[];
+}
+
+export interface AttendanceAbsence {
+  date: string;
+  subjectName: string;
+  subjectCode: string;
+  startTime: string;
+  endTime: string;
+  facultyName: string;
+}
+
+export type LeaveStatus = "PENDING" | "APPROVED" | "REJECTED";
+
+export interface LeaveRequest {
+  id: string;
+  studentId: string;
+  departmentId: string;
+  year: number;
+  section: string;
+  leaveDate: string;
+  reason: string;
+  status: LeaveStatus;
+  reviewedById: string | null;
+  reviewedAt: string | null;
+  remarks: string | null;
+  createdAt: string;
+  student?: { studentId: string; fullName: string };
+}

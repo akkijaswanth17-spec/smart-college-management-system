@@ -19,6 +19,7 @@ import PublicLostFound from "./pages/public/LostFound";
 import StudentDashboardLayout from "./layouts/StudentDashboardLayout";
 import StudentDashboard from "./pages/student/Dashboard";
 import StudentTimetable from "./pages/student/Timetable";
+import StudentAttendance from "./pages/student/Attendance";
 import StudentNotices from "./pages/student/Notices";
 import StudentAcademicUpdates from "./pages/student/AcademicUpdates";
 import StudentLostFound from "./pages/student/LostFound";
@@ -36,6 +37,7 @@ import FacultyDashboardLayout from "./layouts/FacultyDashboardLayout";
 import FacultyDashboard from "./pages/faculty/Dashboard";
 import FacultyTimetable from "./pages/faculty/Timetable";
 import FacultyNextClass from "./pages/faculty/NextClass";
+import FacultyAttendance from "./pages/faculty/Attendance";
 import FacultyNotices from "./pages/faculty/Notices";
 import FacultyAcademicUpdates from "./pages/faculty/AcademicUpdates";
 import FacultyLostFound from "./pages/faculty/LostFound";
@@ -48,6 +50,7 @@ import AdminDashboardLayout from "./layouts/AdminDashboardLayout";
 import AdminDashboard from "./pages/admin/Dashboard";
 import AdminStudents from "./pages/admin/Students";
 import AdminFaculty from "./pages/admin/Faculty";
+import AdminAttendance from "./pages/admin/Attendance";
 import AdminTimetable from "./pages/admin/Timetable";
 import AdminTimetableImport from "./pages/admin/TimetableImport";
 import AdminNotices from "./pages/admin/Notices";
@@ -91,6 +94,7 @@ export default function App() {
                 <Route index element={<Navigate to="dashboard" replace />} />
                 <Route path="dashboard" element={<StudentDashboard />} />
                 <Route path="timetable" element={<StudentTimetable />} />
+                <Route path="attendance" element={<StudentAttendance />} />
                 <Route path="notices" element={<StudentNotices />} />
                 <Route path="academic-updates" element={<StudentAcademicUpdates />} />
                 <Route path="lost-found" element={<StudentLostFound />} />
@@ -114,6 +118,7 @@ export default function App() {
                 <Route path="dashboard" element={<FacultyDashboard />} />
                 <Route path="timetable" element={<FacultyTimetable />} />
                 <Route path="next-class" element={<FacultyNextClass />} />
+                <Route path="attendance" element={<FacultyAttendance />} />
                 <Route path="notices" element={<FacultyNotices />} />
                 <Route path="academic-updates" element={<FacultyAcademicUpdates />} />
                 <Route path="lost-found" element={<FacultyLostFound />} />
@@ -131,6 +136,7 @@ export default function App() {
                 <Route path="dashboard" element={<AdminDashboard />} />
                 <Route path="students" element={<AdminStudents />} />
                 <Route path="faculty" element={<AdminFaculty />} />
+                <Route path="attendance" element={<AdminAttendance />} />
                 <Route path="timetable" element={<AdminTimetable />} />
                 <Route path="timetable/import" element={<AdminTimetableImport />} />
                 <Route path="notices" element={<AdminNotices />} />
@@ -157,6 +163,7 @@ export default function App() {
                 <Route index element={<Navigate to="students" replace />} />
                 <Route path="students" element={<AdminStudents />} />
                 <Route path="faculty" element={<AdminFaculty />} />
+                <Route path="attendance" element={<AdminAttendance />} />
                 <Route path="timetable" element={<AdminTimetable />} />
                 <Route path="marks" element={<AdminMarks />} />
                 <Route path="promotions" element={<AdminPromotions />} />

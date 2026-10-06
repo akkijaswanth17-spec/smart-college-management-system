@@ -14,6 +14,7 @@ import {
   ClipboardList,
   FolderOpen,
   Star,
+  CalendarCheck,
 } from "lucide-react";
 import { DashboardLayout, NavItem } from "./DashboardLayout";
 import { feedbackService } from "../services/feedback.service";
@@ -21,6 +22,7 @@ import { feedbackService } from "../services/feedback.service";
 const BASE_NAV_ITEMS: NavItem[] = [
   { label: "Dashboard", to: "/student/dashboard", icon: LayoutDashboard, end: true },
   { label: "Timetable", to: "/student/timetable", icon: CalendarDays },
+  { label: "Attendance", to: "/student/attendance", icon: CalendarCheck },
   { label: "Notices", to: "/student/notices", icon: Megaphone },
   { label: "Academic Updates", to: "/student/academic-updates", icon: BookOpen },
   { label: "Study Materials", to: "/student/study-materials", icon: FolderOpen },
@@ -46,7 +48,7 @@ export default function StudentDashboardLayout() {
   }, []);
 
   const navItems = feedbackEnabled
-    ? [...BASE_NAV_ITEMS.slice(0, 5), FEEDBACK_NAV_ITEM, ...BASE_NAV_ITEMS.slice(5)]
+    ? [...BASE_NAV_ITEMS.slice(0, 6), FEEDBACK_NAV_ITEM, ...BASE_NAV_ITEMS.slice(6)]
     : BASE_NAV_ITEMS;
 
   return (

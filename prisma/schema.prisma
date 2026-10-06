@@ -209,6 +209,8 @@ model Student {
   whatsappRequests WhatsAppRequest[]
   marks           Mark[]
   feedbackSubmissions FeedbackSubmission[]
+  attendanceRecords AttendanceRecord[]
+  leaveRequests     LeaveRequest[]
 
   @@index([departmentId])
   @@map("students")
@@ -232,6 +234,7 @@ model Faculty {
   timetableEntries TimetableEntry[]
   classReminders  ClassReminder[]
   feedbackSubmissions FeedbackSubmission[]
+  attendanceRecords AttendanceRecord[]
 
   @@index([departmentId])
   @@map("faculty")
@@ -287,6 +290,8 @@ model Department {
   materials    StudyMaterial[]
   feedbackSubmissions FeedbackSubmission[]
   feedbackPublishes   FeedbackPublish[]
+  attendanceRecords   AttendanceRecord[]
+  leaveRequests       LeaveRequest[]
 
   @@map("departments")
 }
@@ -301,6 +306,7 @@ model Subject {
   timetableEntries TimetableEntry[]
   marks           Mark[]
   feedbackSubmissions FeedbackSubmission[]
+  attendanceRecords   AttendanceRecord[]
 
   @@map("subjects")
 }
@@ -481,6 +487,7 @@ model TimetableEntry {
   room           Room            @relation(fields: [roomId], references: [id])
   block          Block           @relation(fields: [blockId], references: [id])
   classReminders ClassReminder[]
+  attendanceRecords AttendanceRecord[]
 
   @@index([facultyId, day])
   @@index([departmentId, year, section, day])
@@ -698,4 +705,77 @@ model ImportBatch {
   createdAt   DateTime     @default(now()) @map("created_at")
 
   @@map("import_batches")
+}
+
+// ============================================================
+// ATTENDANCE (period-wise — one record per student per timetable
+// period per date, not one record per day)
+// ============================================================
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+}
+
+// The timetableEntry a record belongs to already encodes the subject,
+// faculty, department, year, section, day-of-week and time slot, so the
+// unique constraint on (timetableEntryId, studentId, date) is what stops a
+// student getting two records for the same period on the same day.
+// departmentId/year/section/facultyId/subjectId are still denormalized here
+// (matching FeedbackSubmission's convention) so reports can query without
+// always joining through the timetable.
+model AttendanceRecord {
+  id               String           @id @default(cuid())
+  timetableEntryId String           @map("timetable_entry_id")
+  studentId        String           @map("student_id")
+  facultyId        String           @map("faculty_id")
+  subjectId        String           @map("subject_id")
+  departmentId     String           @map("department_id")
+  year             Int
+  section          String
+  date             DateTime         @db.Date
+  status           AttendanceStatus
+  createdById      String           @map("created_by_id")
+  createdAt        DateTime         @default(now()) @map("created_at")
+  updatedAt        DateTime         @updatedAt @map("updated_at")
+
+  timetableEntry TimetableEntry @relation(fields: [timetableEntryId], references: [id], onDelete: Cascade)
+  student        Student        @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  faculty        Faculty        @relation(fields: [facultyId], references: [id])
+  subject        Subject        @relation(fields: [subjectId], references: [id])
+  department     Department     @relation(fields: [departmentId], references: [id])
+
+  @@unique([timetableEntryId, studentId, date])
+  @@index([studentId, date])
+  @@index([departmentId, year, section, date])
+  @@index([facultyId, date])
+  @@map("attendance_records")
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model LeaveRequest {
+  id           String      @id @default(cuid())
+  studentId    String      @map("student_id")
+  departmentId String      @map("department_id")
+  year         Int
+  section      String
+  leaveDate    DateTime    @map("leave_date") @db.Date
+  reason       String
+  status       LeaveStatus @default(PENDING)
+  reviewedById String?     @map("reviewed_by_id")
+  reviewedAt   DateTime?   @map("reviewed_at")
+  remarks      String?
+  createdAt    DateTime    @default(now()) @map("created_at")
+
+  student    Student    @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  department Department @relation(fields: [departmentId], references: [id])
+
+  @@index([studentId])
+  @@index([departmentId, year, section, status])
+  @@map("leave_requests")
 }
