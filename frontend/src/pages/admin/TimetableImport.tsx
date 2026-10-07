@@ -29,6 +29,43 @@ interface EditableRow {
   rawLine?: string;
 }
 
+interface LegendRow {
+  code: string | null;
+  subjectName: string;
+  facultyName: string;
+}
+
+interface DetectedHeader {
+  departmentText: string | null;
+  academicYear: string | null;
+  classSemesterText: string | null;
+}
+
+function normalizeForMatch(s: string): string {
+  return s.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+}
+
+/** Best-effort fuzzy match by shared-word overlap — OCR text is never an exact match
+ * against the real subject/faculty names, so this picks the closest candidate rather
+ * than requiring an exact string match. Returns null below a minimum overlap. */
+function bestMatch<T>(target: string, candidates: T[], label: (c: T) => string): T | null {
+  const targetWords = new Set(normalizeForMatch(target).split(" ").filter((w) => w.length > 1));
+  if (targetWords.size === 0) return null;
+
+  let best: T | null = null;
+  let bestScore = 0;
+  for (const c of candidates) {
+    const candWords = normalizeForMatch(label(c)).split(" ").filter((w) => w.length > 1);
+    const overlap = candWords.filter((w) => targetWords.has(w)).length;
+    const score = overlap / Math.max(targetWords.size, candWords.length);
+    if (score > bestScore) {
+      bestScore = score;
+      best = c;
+    }
+  }
+  return bestScore >= 0.4 ? best : null;
+}
+
 function blankRow(overrides: Partial<EditableRow> = {}): EditableRow {
   return {
     facultyId: "",
@@ -75,6 +112,8 @@ export default function AdminTimetableImport() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [rawText, setRawText] = useState("");
   const [rows, setRows] = useState<EditableRow[]>([]);
+  const [legend, setLegend] = useState<LegendRow[]>([]);
+  const [header, setHeader] = useState<DetectedHeader | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [confirmResult, setConfirmResult] = useState<{ created: number; failed: number } | null>(null);
 
@@ -85,6 +124,8 @@ export default function AdminTimetableImport() {
       const result = await importService.timetableImage(imageFile);
       setImagePreview(result.imageUrl);
       setRawText(result.rawText);
+      setLegend(result.legend ?? []);
+      setHeader(result.header ?? null);
       setRows(
         result.rows.map((r: any) =>
           blankRow({
@@ -96,14 +137,40 @@ export default function AdminTimetableImport() {
         )
       );
       setConfirmResult(null);
-      if (result.rows.length === 0) {
-        toast.error("No schedule-like lines were detected. You can still add rows manually below.");
+      if (result.rows.length === 0 && (!result.legend || result.legend.length === 0)) {
+        toast.error("Nothing could be reliably extracted from this image. Try a higher-resolution photo, or use the CSV import instead.");
+      } else if (result.rows.length === 0) {
+        toast.success(
+          `Detected ${result.legend.length} subject(s)/faculty from the legend table below — the day-by-day grid itself couldn't be read reliably from this image, so add each period manually using "Use" on a subject.`
+        );
       }
     } catch (err) {
       toast.error(getErrorMessage(err));
     } finally {
       setUploading(false);
     }
+  }
+
+  /** Adds a new blank row pre-filled from a legend entry — matches the OCR'd
+   * subject/faculty names against real records so the admin only has to pick
+   * department/year/section/day/time/room instead of hunting both dropdowns too. */
+  function useLegendRow(entry: LegendRow) {
+    const matchedFaculty = bestMatch(entry.facultyName, faculty, (f) => f.fullName);
+    const matchedSubject = bestMatch(entry.subjectName, subjects, (s) => s.name);
+    setRows((prev) => [
+      ...prev,
+      blankRow({
+        facultyId: matchedFaculty?.id ?? "",
+        subjectId: matchedSubject?.id ?? "",
+        departmentId: matchedSubject?.departmentId ?? "",
+        rawLine: `From legend: ${entry.code ? entry.code + " — " : ""}${entry.subjectName} / ${entry.facultyName}`,
+      }),
+    ]);
+    toast.success(
+      matchedSubject || matchedFaculty
+        ? "Row added — check the pre-filled subject/faculty, then set day, time and section."
+        : "Row added, but no matching subject/faculty was found in the system — please select them manually."
+    );
   }
 
   function updateRow(index: number, patch: Partial<EditableRow>) {
@@ -192,6 +259,70 @@ export default function AdminTimetableImport() {
           </Card>
 
           {uploading && <PageSpinner />}
+
+          {!uploading && (header || legend.length > 0) && (
+            <Card>
+              <CardHeader>
+                <h2 className="text-sm font-semibold text-slate-700">Detected Class Info &amp; Subjects</h2>
+                <p className="mt-1 text-xs text-slate-500">
+                  Read from the header and the subject/faculty legend table. The day-by-day grid itself is small,
+                  dense text and often isn't reliable to auto-read — click "Use" on a subject below to add a row
+                  pre-filled with its matched subject/faculty, then just set the day, time and section.
+                </p>
+              </CardHeader>
+              <CardBody className="space-y-4">
+                {header && (header.departmentText || header.academicYear || header.classSemesterText) && (
+                  <div className="flex flex-wrap gap-4 rounded-lg bg-slate-50 px-4 py-3 text-xs text-slate-600">
+                    {header.departmentText && (
+                      <span>
+                        <span className="font-semibold text-slate-800">Department:</span> {header.departmentText}
+                      </span>
+                    )}
+                    {header.classSemesterText && (
+                      <span>
+                        <span className="font-semibold text-slate-800">Class/Semester:</span>{" "}
+                        {header.classSemesterText}
+                      </span>
+                    )}
+                    {header.academicYear && (
+                      <span>
+                        <span className="font-semibold text-slate-800">Academic Year:</span> {header.academicYear}
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                {legend.length > 0 && (
+                  <div className="overflow-hidden rounded-xl border border-slate-200">
+                    <table className="w-full text-sm">
+                      <thead className="bg-slate-50">
+                        <tr>
+                          <th className="px-3 py-2 text-left text-xs font-bold uppercase text-slate-500">Code</th>
+                          <th className="px-3 py-2 text-left text-xs font-bold uppercase text-slate-500">Subject</th>
+                          <th className="px-3 py-2 text-left text-xs font-bold uppercase text-slate-500">Faculty</th>
+                          <th className="px-3 py-2 text-right text-xs font-bold uppercase text-slate-500">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {legend.map((l, i) => (
+                          <tr key={i}>
+                            <td className="px-3 py-2 text-slate-500">{l.code ?? "—"}</td>
+                            <td className="px-3 py-2 text-slate-700">{l.subjectName}</td>
+                            <td className="px-3 py-2 text-slate-700">{l.facultyName}</td>
+                            <td className="px-3 py-2 text-right">
+                              <Button size="sm" variant="outline" onClick={() => useLegendRow(l)}>
+                                <Plus className="h-3.5 w-3.5" /> Use
+                              </Button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </CardBody>
+            </Card>
+          )}
 
           {imagePreview && !uploading && (
             <div className="grid gap-6 lg:grid-cols-[320px_1fr]">

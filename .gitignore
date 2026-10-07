@@ -46,3 +46,6 @@ frontend-full-source.txt
 *.sln
 *.sw?
 .claude/
+
+# tesseract.js caches its downloaded language model in the cwd it's run from
+*.traineddata

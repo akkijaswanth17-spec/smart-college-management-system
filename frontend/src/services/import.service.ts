@@ -33,7 +33,13 @@ export const importService = {
     const form = new FormData();
     form.append("image", file);
     const res = await api.post<{
-      data: { imageUrl: string; rawText: string; rows: Record<string, unknown>[] };
+      data: {
+        imageUrl: string;
+        rawText: string;
+        rows: Record<string, unknown>[];
+        legend: { code: string | null; subjectName: string; facultyName: string }[];
+        header: { departmentText: string | null; academicYear: string | null; classSemesterText: string | null };
+      };
     }>("/import/timetable/image", form, { headers: { "Content-Type": "multipart/form-data" } });
     return res.data.data;
   },

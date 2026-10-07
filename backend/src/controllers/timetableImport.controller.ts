@@ -15,7 +15,7 @@ import { recordAudit } from "../services/audit.service";
 export const uploadTimetableImage = asyncHandler(async (req: Request, res: Response) => {
   if (!req.file) throw ApiError.badRequest("An image file is required");
 
-  const { rawText, rows } = await extractTimetableFromImage(req.file.path);
+  const { rawText, rows, legend, header } = await extractTimetableFromImage(req.file.path);
 
   res.status(200).json({
     success: true,
@@ -23,6 +23,8 @@ export const uploadTimetableImage = asyncHandler(async (req: Request, res: Respo
       imageUrl: `/uploads/timetable/${req.file.filename}`,
       rawText,
       rows,
+      legend,
+      header,
     },
   });
 });
