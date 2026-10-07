@@ -43,6 +43,19 @@ export const importService = {
     }>("/import/timetable/image", form, { headers: { "Content-Type": "multipart/form-data" } });
     return res.data.data;
   },
+  async timetableWord(file: File) {
+    const form = new FormData();
+    form.append("document", file);
+    const res = await api.post<{
+      data: {
+        rawText: string;
+        rows: Record<string, unknown>[];
+        legend: { code: string | null; subjectName: string; facultyName: string }[];
+        header: { departmentText: string | null; academicYear: string | null; classSemesterText: string | null };
+      };
+    }>("/import/timetable/word", form, { headers: { "Content-Type": "multipart/form-data" } });
+    return res.data.data;
+  },
   async confirmTimetableImage(rows: Record<string, unknown>[]) {
     const res = await api.post<{ data: { created: number; failed: number; errors: unknown[] } }>(
       "/import/timetable/image/confirm",

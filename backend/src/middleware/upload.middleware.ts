@@ -13,6 +13,7 @@ const ALLOWED_IMPORT_TYPES = new Set([
   "application/vnd.ms-excel",
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
 ]);
+const ALLOWED_WORD_TYPES = new Set(["application/vnd.openxmlformats-officedocument.wordprocessingml.document"]);
 const ALLOWED_STUDY_MATERIAL_TYPES = new Set([
   ...ALLOWED_DOC_TYPES,
   "application/msword",
@@ -88,6 +89,12 @@ export const uploadTimetableImage = multer({
   fileFilter: fileFilterFor(ALLOWED_IMAGE_TYPES),
   limits,
 }).single("image");
+
+export const uploadTimetableWord = multer({
+  storage: makeStorage("timetable"),
+  fileFilter: fileFilterFor(ALLOWED_WORD_TYPES),
+  limits,
+}).single("document");
 
 export const uploadBrandingImage = multer({
   storage: makeStorage("branding"),

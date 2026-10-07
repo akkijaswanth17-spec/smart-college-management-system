@@ -1,9 +1,11 @@
+import fs from "fs";
 import { Request, Response } from "express";
 import { z } from "zod";
 import { asyncHandler } from "../utils/asyncHandler";
 import { ApiError } from "../utils/apiError";
 import { prisma } from "../config/prisma";
 import { extractTimetableFromImage } from "../services/ocr.service";
+import { extractTimetableFromWord } from "../services/wordTimetable.service";
 import { assertNoTimetableConflict } from "../services/timetable.service";
 import { recordAudit } from "../services/audit.service";
 
@@ -26,6 +28,23 @@ export const uploadTimetableImage = asyncHandler(async (req: Request, res: Respo
       legend,
       header,
     },
+  });
+});
+
+/**
+ * Word (.docx) equivalent of uploadTimetableImage — same preview-only, nothing
+ * written until the admin confirms. Word tables carry exact cell text (no OCR
+ * guessing), so the extracted day-by-day grid is usually far more complete.
+ */
+export const uploadTimetableWord = asyncHandler(async (req: Request, res: Response) => {
+  if (!req.file) throw ApiError.badRequest("A Word (.docx) file is required");
+
+  const buffer = fs.readFileSync(req.file.path);
+  const { rawText, rows, legend, header } = await extractTimetableFromWord(buffer);
+
+  res.status(200).json({
+    success: true,
+    data: { rawText, rows, legend, header },
   });
 });
 

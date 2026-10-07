@@ -5,7 +5,7 @@ import { authenticate } from "../middleware/auth.middleware";
 import { requireRole } from "../middleware/rbac.middleware";
 import { validate } from "../middleware/validate.middleware";
 import { handleUpload } from "../utils/handleUpload";
-import { uploadImportFile, uploadTimetableImage } from "../middleware/upload.middleware";
+import { uploadImportFile, uploadTimetableImage, uploadTimetableWord } from "../middleware/upload.middleware";
 import { confirmTimetableSchema } from "../controllers/timetableImport.controller";
 
 const router = Router();
@@ -24,5 +24,8 @@ router.post(
   validate(confirmTimetableSchema),
   ttImportController.confirmTimetableImport
 );
+
+// Timetable Word (.docx) import flow — shares the same confirm endpoint/shape as the image flow
+router.post("/timetable/word", handleUpload(uploadTimetableWord), ttImportController.uploadTimetableWord);
 
 export default router;
