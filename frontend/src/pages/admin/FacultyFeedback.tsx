@@ -214,11 +214,13 @@ export function FacultyFeedback() {
   // Tab 3 — Feedback Submitted (per-student status)
   const [submissionStatus, setSubmissionStatus] = useState<FeedbackSubmissionStatus | null>(null);
   const [loadingSubmissionStatus, setLoadingSubmissionStatus] = useState(false);
+  const [submissionFilter, setSubmissionFilter] = useState<"all" | "submitted" | "notSubmitted">("all");
 
   async function loadSubmissionStatus() {
     if (!canLoad) return;
     setLoadingSubmissionStatus(true);
     setSubmissionStatus(null);
+    setSubmissionFilter("all");
     try {
       setSubmissionStatus(await feedbackService.submissionStatus(params));
     } catch (err) {
@@ -407,50 +409,97 @@ export function FacultyFeedback() {
               />
             )}
 
-            {!loadingSubmissionStatus && submissionStatus && submissionStatus.students.length > 0 && (
-              <div className="space-y-3">
-                <p className="text-xs text-slate-500">
-                  Based on {submissionStatus.totalTargets} faculty/subject{submissionStatus.totalTargets === 1 ? "" : "s"} on this
-                  class's timetable — a student counts as "Submitted" only once feedback is given for every one of them.
-                </p>
-                <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="bg-slate-50 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                        <th className="px-4 py-3">Roll No</th>
-                        <th className="px-4 py-3">Student Name</th>
-                        <th className="px-4 py-3 text-center">Progress</th>
-                        <th className="px-4 py-3 text-right">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {submissionStatus.students.map((s, i) => (
-                        <tr key={s.studentId} className={i % 2 === 1 ? "bg-slate-50" : "bg-white"}>
-                          <td className="px-4 py-2.5 font-mono text-xs text-slate-600">{s.studentId}</td>
-                          <td className="px-4 py-2.5 font-medium text-slate-800">{s.fullName}</td>
-                          <td className="px-4 py-2.5 text-center text-slate-500">
-                            {s.submittedCount} / {s.totalTargets}
-                          </td>
-                          <td className="px-4 py-2.5 text-right">
-                            <Badge tone={s.submitted ? "green" : "amber"}>
-                              {s.submitted ? (
-                                <span className="flex items-center gap-1">
-                                  <CheckCircle2 className="h-3 w-3" /> Submitted
-                                </span>
-                              ) : (
-                                <span className="flex items-center gap-1">
-                                  <XCircle className="h-3 w-3" /> Not Submitted
-                                </span>
-                              )}
-                            </Badge>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+            {!loadingSubmissionStatus && submissionStatus && submissionStatus.students.length > 0 && (() => {
+              const submittedList = submissionStatus.students.filter((s) => s.submitted);
+              const notSubmittedList = submissionStatus.students.filter((s) => !s.submitted);
+              const visible =
+                submissionFilter === "submitted" ? submittedList : submissionFilter === "notSubmitted" ? notSubmittedList : submissionStatus.students;
+
+              return (
+                <div className="space-y-3">
+                  <p className="text-xs text-slate-500">
+                    Based on {submissionStatus.totalTargets} faculty/subject{submissionStatus.totalTargets === 1 ? "" : "s"} on this
+                    class's timetable — a student counts as "Submitted" only once feedback is given for every one of them.
+                  </p>
+
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={() => setSubmissionFilter("all")}
+                      className={`rounded-full px-4 py-2 text-xs font-semibold transition-colors ${
+                        submissionFilter === "all" ? "bg-brand-900 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                      }`}
+                    >
+                      All ({submissionStatus.students.length})
+                    </button>
+                    <button
+                      onClick={() => setSubmissionFilter("submitted")}
+                      className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold transition-colors ${
+                        submissionFilter === "submitted" ? "bg-emerald-600 text-white" : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                      }`}
+                    >
+                      <CheckCircle2 className="h-3.5 w-3.5" /> Submitted ({submittedList.length})
+                    </button>
+                    <button
+                      onClick={() => setSubmissionFilter("notSubmitted")}
+                      className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold transition-colors ${
+                        submissionFilter === "notSubmitted" ? "bg-amber-600 text-white" : "bg-amber-50 text-amber-700 hover:bg-amber-100"
+                      }`}
+                    >
+                      <XCircle className="h-3.5 w-3.5" /> Not Submitted ({notSubmittedList.length})
+                    </button>
+                  </div>
+
+                  {visible.length === 0 ? (
+                    <EmptyState
+                      icon={Users}
+                      title={submissionFilter === "submitted" ? "No one has submitted yet" : "Everyone has submitted"}
+                      description={
+                        submissionFilter === "submitted"
+                          ? "No students in this class have completed their feedback yet."
+                          : "Every student in this class has completed feedback for all faculty."
+                      }
+                    />
+                  ) : (
+                    <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="bg-slate-50 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                            <th className="px-4 py-3">Roll No</th>
+                            <th className="px-4 py-3">Student Name</th>
+                            <th className="px-4 py-3 text-center">Progress</th>
+                            <th className="px-4 py-3 text-right">Status</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {visible.map((s, i) => (
+                            <tr key={s.studentId} className={i % 2 === 1 ? "bg-slate-50" : "bg-white"}>
+                              <td className="px-4 py-2.5 font-mono text-xs text-slate-600">{s.studentId}</td>
+                              <td className="px-4 py-2.5 font-medium text-slate-800">{s.fullName}</td>
+                              <td className="px-4 py-2.5 text-center text-slate-500">
+                                {s.submittedCount} / {s.totalTargets}
+                              </td>
+                              <td className="px-4 py-2.5 text-right">
+                                <Badge tone={s.submitted ? "green" : "amber"}>
+                                  {s.submitted ? (
+                                    <span className="flex items-center gap-1">
+                                      <CheckCircle2 className="h-3 w-3" /> Submitted
+                                    </span>
+                                  ) : (
+                                    <span className="flex items-center gap-1">
+                                      <XCircle className="h-3 w-3" /> Not Submitted
+                                    </span>
+                                  )}
+                                </Badge>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
                 </div>
-              </div>
-            )}
+              );
+            })()}
           </div>
         )}
       </CardBody>
