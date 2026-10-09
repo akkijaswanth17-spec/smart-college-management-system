@@ -1,4 +1,10 @@
-import bcrypt from "bcryptjs";
+// Native bcrypt (not bcryptjs): same hash format/cost factor, fully
+// compatible with every password already hashed by bcryptjs, but runs the
+// actual hashing in a C++ addon off the main thread instead of blocking it
+// with pure-JS work — on a CPU-constrained host this is the difference
+// between a login taking ~4s and ~100-300ms, and it stops concurrent logins
+// from queuing behind each other on the single JS thread.
+import bcrypt from "bcrypt";
 
 const SALT_ROUNDS = 12;
 
