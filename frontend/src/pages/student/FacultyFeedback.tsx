@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Star, CheckCircle2, MessageSquareText, Send } from "lucide-react";
+import { Star, CheckCircle2, MessageSquareText, Send, AlertTriangle, RotateCw } from "lucide-react";
 import { Card } from "../../components/ui/Card";
 import { Badge } from "../../components/ui/Badge";
 import { Button } from "../../components/ui/Button";
@@ -16,17 +16,25 @@ export default function StudentFacultyFeedback() {
   const [targets, setTargets] = useState<FeedbackTarget[]>([]);
   const [loading, setLoading] = useState(true);
   const [enabled, setEnabled] = useState(true);
+  // Tracks a failed load distinctly from "genuinely nothing to show" — without
+  // this, any failed fetch (a rate limit, a network blip, a cold-start
+  // timeout) left `targets` empty and rendered the same "No faculty to rate
+  // yet" state as being fully done, which is actively misleading: it looks
+  // like success, not a problem to retry.
+  const [loadError, setLoadError] = useState(false);
   const toast = useToast();
   const navigate = useNavigate();
 
   async function reload() {
     setLoading(true);
+    setLoadError(false);
     try {
       const [t, isEnabled] = await Promise.all([feedbackService.myTargets(), feedbackService.getEnabled()]);
       setTargets(t.targets);
       setEnabled(isEnabled);
     } catch (err) {
       toast.error(getErrorMessage(err));
+      setLoadError(true);
     } finally {
       setLoading(false);
     }
@@ -61,6 +69,18 @@ export default function StudentFacultyFeedback() {
 
       {loading ? (
         <SkeletonList rows={5} />
+      ) : loadError && targets.length === 0 ? (
+        <div className="flex flex-col items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-6 py-10 text-center">
+          <AlertTriangle className="h-8 w-8 text-amber-500" />
+          <p className="font-semibold text-slate-800">Couldn't load your feedback list</p>
+          <p className="max-w-sm text-sm text-slate-500">
+            This usually means the server is busy or your connection briefly dropped — your earlier submissions are
+            safe either way. Tap retry.
+          </p>
+          <Button onClick={reload} variant="outline">
+            <RotateCw className="h-4 w-4" /> Retry
+          </Button>
+        </div>
       ) : !enabled ? (
         <EmptyState
           icon={MessageSquareText}
