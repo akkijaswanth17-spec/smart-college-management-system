@@ -1,5 +1,16 @@
 import { Outlet } from "react-router-dom";
-import { Users, GraduationCap, CalendarDays, FileSpreadsheet, BarChart3, TrendingUp, Megaphone, FolderOpen, CalendarCheck } from "lucide-react";
+import {
+  Users,
+  GraduationCap,
+  CalendarDays,
+  FileSpreadsheet,
+  BarChart3,
+  TrendingUp,
+  Megaphone,
+  FolderOpen,
+  CalendarCheck,
+  MessageSquareText,
+} from "lucide-react";
 import { DashboardLayout, NavItem } from "./DashboardLayout";
 
 const navItems: NavItem[] = [
@@ -11,6 +22,7 @@ const navItems: NavItem[] = [
   { label: "Promotions", to: "/branch/promotions", icon: TrendingUp },
   { label: "Notices", to: "/branch/notices", icon: Megaphone },
   { label: "Study Materials", to: "/branch/study-materials", icon: FolderOpen },
+  { label: "Faculty Feedback", to: "/branch/faculty-feedback", icon: MessageSquareText },
   { label: "Reports", to: "/branch/reports", icon: BarChart3 },
 ];
 

@@ -2,6 +2,7 @@ import { Router } from "express";
 import * as controller from "../controllers/feedback.controller";
 import { authenticate } from "../middleware/auth.middleware";
 import { requireRole } from "../middleware/rbac.middleware";
+import { resolveBranchScope } from "../middleware/branchScope.middleware";
 import { validate } from "../middleware/validate.middleware";
 import {
   createFeedbackQuestionSchema,
@@ -16,7 +17,7 @@ import {
 
 const router = Router();
 
-router.use(authenticate);
+router.use(authenticate, resolveBranchScope);
 
 // Module on/off switch — Admin decides whether Students can see/use it at all.
 router.get("/enabled", controller.getFeedbackEnabled);
@@ -40,23 +41,39 @@ router.post(
 router.get("/my-targets", requireRole("STUDENT"), controller.getMyFeedbackTargets);
 router.post("/submit", requireRole("STUDENT"), validate(submitFeedbackSchema), controller.submitFeedback);
 
-// Admin — reports + publish
-router.get("/class-report", requireRole("ADMIN"), validate(feedbackReportQuerySchema), controller.getFeedbackClassReport);
-router.get("/faculty-list", requireRole("ADMIN"), validate(feedbackReportQuerySchema), controller.getFeedbackFacultyList);
+// Admin + Branch — reports + publish (Branch is always forced to its own
+// department server-side via scopedDepartmentId, same as marks/attendance).
+router.get(
+  "/class-report",
+  requireRole("ADMIN", "BRANCH"),
+  validate(feedbackReportQuerySchema),
+  controller.getFeedbackClassReport
+);
+router.get(
+  "/faculty-list",
+  requireRole("ADMIN", "BRANCH"),
+  validate(feedbackReportQuerySchema),
+  controller.getFeedbackFacultyList
+);
 router.get(
   "/faculty-detail",
-  requireRole("ADMIN"),
+  requireRole("ADMIN", "BRANCH"),
   validate(feedbackFacultyDetailQuerySchema),
   controller.getFeedbackFacultyDetail
 );
-router.get("/publish-status", requireRole("ADMIN"), validate(feedbackReportQuerySchema), controller.getFeedbackPublishStatus);
+router.get(
+  "/publish-status",
+  requireRole("ADMIN", "BRANCH"),
+  validate(feedbackReportQuerySchema),
+  controller.getFeedbackPublishStatus
+);
 router.get(
   "/submission-status",
-  requireRole("ADMIN"),
+  requireRole("ADMIN", "BRANCH"),
   validate(feedbackReportQuerySchema),
   controller.getFeedbackSubmissionStatus
 );
-router.post("/publish", requireRole("ADMIN"), validate(publishFeedbackSchema), controller.publishFeedback);
+router.post("/publish", requireRole("ADMIN", "BRANCH"), validate(publishFeedbackSchema), controller.publishFeedback);
 
 // Faculty — own already-published feedback only
 router.get("/my-feedback", requireRole("FACULTY"), controller.getMyPublishedFeedback);

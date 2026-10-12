@@ -170,6 +170,7 @@ export default function App() {
                 <Route path="notices" element={<AdminNotices />} />
                 <Route path="study-materials" element={<AdminStudyMaterials />} />
                 <Route path="reports" element={<AdminReports />} />
+                <Route path="faculty-feedback" element={<AdminFacultyFeedback />} />
               </Route>
             </Route>
 

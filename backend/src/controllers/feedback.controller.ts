@@ -3,6 +3,7 @@ import { asyncHandler } from "../utils/asyncHandler";
 import { prisma } from "../config/prisma";
 import { ApiError } from "../utils/apiError";
 import { recordAudit } from "../services/audit.service";
+import { scopedDepartmentId } from "../middleware/branchScope.middleware";
 
 const currentAcademicYear = () => `${new Date().getFullYear()}-${new Date().getFullYear() + 1}`;
 
@@ -369,7 +370,8 @@ async function buildFeedbackDetail(params: {
 // ============================================================
 
 export const getFeedbackClassReport = asyncHandler(async (req: Request, res: Response) => {
-  const { departmentId, year, section, academicYear } = req.query as Record<string, string>;
+  const { year, section, academicYear } = req.query as Record<string, string>;
+  const departmentId = scopedDepartmentId(req, req.query.departmentId as string | undefined)!;
   const yearNum = Number(year);
 
   const pairs = await prisma.timetableEntry.findMany({
@@ -408,7 +410,8 @@ export const getFeedbackClassReport = asyncHandler(async (req: Request, res: Res
 });
 
 export const getFeedbackFacultyList = asyncHandler(async (req: Request, res: Response) => {
-  const { departmentId, year, section } = req.query as Record<string, string>;
+  const { year, section } = req.query as Record<string, string>;
+  const departmentId = scopedDepartmentId(req, req.query.departmentId as string | undefined)!;
 
   const pairs = await prisma.timetableEntry.findMany({
     where: { departmentId, year: Number(year), section, isActive: true },
@@ -435,13 +438,15 @@ export const getFeedbackFacultyList = asyncHandler(async (req: Request, res: Res
 });
 
 export const getFeedbackFacultyDetail = asyncHandler(async (req: Request, res: Response) => {
-  const { departmentId, year, section, academicYear, facultyId, subjectId } = req.query as Record<string, string>;
+  const { year, section, academicYear, facultyId, subjectId } = req.query as Record<string, string>;
+  const departmentId = scopedDepartmentId(req, req.query.departmentId as string | undefined)!;
   const detail = await buildFeedbackDetail({ facultyId, subjectId, departmentId, year: Number(year), section, academicYear });
   res.json({ success: true, data: detail });
 });
 
 export const getFeedbackPublishStatus = asyncHandler(async (req: Request, res: Response) => {
-  const { departmentId, year, section, academicYear } = req.query as Record<string, string>;
+  const { year, section, academicYear } = req.query as Record<string, string>;
+  const departmentId = scopedDepartmentId(req, req.query.departmentId as string | undefined)!;
   const publish = await prisma.feedbackPublish.findUnique({
     where: { departmentId_year_section_academicYear: { departmentId, year: Number(year), section, academicYear } },
   });
@@ -451,7 +456,8 @@ export const getFeedbackPublishStatus = asyncHandler(async (req: Request, res: R
 // Every student in the class vs who's actually completed feedback for ALL of
 // their own faculty/subjects — lets Admin chase down students who skipped it.
 export const getFeedbackSubmissionStatus = asyncHandler(async (req: Request, res: Response) => {
-  const { departmentId, year, section, academicYear } = req.query as Record<string, string>;
+  const { year, section, academicYear } = req.query as Record<string, string>;
+  const departmentId = scopedDepartmentId(req, req.query.departmentId as string | undefined)!;
   const yearNum = Number(year);
 
   const [students, targets] = await Promise.all([
@@ -497,12 +503,13 @@ export const getFeedbackSubmissionStatus = asyncHandler(async (req: Request, res
 });
 
 export const publishFeedback = asyncHandler(async (req: Request, res: Response) => {
-  const { departmentId, year, section, academicYear } = req.body as {
+  const { year, section, academicYear } = req.body as {
     departmentId: string;
     year: number;
     section: string;
     academicYear: string;
   };
+  const departmentId = scopedDepartmentId(req, req.body.departmentId as string | undefined)!;
 
   const publish = await prisma.feedbackPublish.upsert({
     where: { departmentId_year_section_academicYear: { departmentId, year, section, academicYear } },
