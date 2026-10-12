@@ -41,8 +41,14 @@ router.post(
 router.get("/my-targets", requireRole("STUDENT"), controller.getMyFeedbackTargets);
 router.post("/submit", requireRole("STUDENT"), validate(submitFeedbackSchema), controller.submitFeedback);
 
-// Admin + Branch — reports + publish (Branch is always forced to its own
-// department server-side via scopedDepartmentId, same as marks/attendance).
+// Admin + Branch — reports (Branch is always forced to its own department
+// server-side via scopedDepartmentId, same as marks/attendance). The report
+// content endpoints (class-report/faculty-list/faculty-detail) additionally
+// block Branch until Admin has published that class's results — see
+// assertPublishedForBranch in the controller. publish-status and
+// submission-status stay visible to Branch pre-publish since neither leaks
+// faculty performance (one is just a yes/no flag, the other is completion
+// counts), so Branch can track drive progress before results are released.
 router.get(
   "/class-report",
   requireRole("ADMIN", "BRANCH"),
@@ -73,7 +79,10 @@ router.get(
   validate(feedbackReportQuerySchema),
   controller.getFeedbackSubmissionStatus
 );
-router.post("/publish", requireRole("ADMIN", "BRANCH"), validate(publishFeedbackSchema), controller.publishFeedback);
+
+// Publishing stays Admin-only — it's the single switch that releases results
+// to both Faculty (their own) and Branch (their department's reports).
+router.post("/publish", requireRole("ADMIN"), validate(publishFeedbackSchema), controller.publishFeedback);
 
 // Faculty — own already-published feedback only
 router.get("/my-feedback", requireRole("FACULTY"), controller.getMyPublishedFeedback);

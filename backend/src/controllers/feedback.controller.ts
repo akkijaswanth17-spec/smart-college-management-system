@@ -369,10 +369,24 @@ async function buildFeedbackDetail(params: {
 // ADMIN — reports + publish
 // ============================================================
 
+// Branch may only see feedback content once Admin has published it for that
+// exact class — never trust a Branch caller to view results early. A no-op
+// for Admin, who needs to see the raw results before deciding to publish.
+async function assertPublishedForBranch(req: Request, departmentId: string, year: number, section: string, academicYear: string) {
+  if (req.user?.role !== "BRANCH") return;
+  const publish = await prisma.feedbackPublish.findUnique({
+    where: { departmentId_year_section_academicYear: { departmentId, year, section, academicYear } },
+  });
+  if (!publish) {
+    throw ApiError.forbidden("Feedback results for this class haven't been published by Admin yet.");
+  }
+}
+
 export const getFeedbackClassReport = asyncHandler(async (req: Request, res: Response) => {
   const { year, section, academicYear } = req.query as Record<string, string>;
   const departmentId = scopedDepartmentId(req, req.query.departmentId as string | undefined)!;
   const yearNum = Number(year);
+  await assertPublishedForBranch(req, departmentId, yearNum, section, academicYear);
 
   const pairs = await prisma.timetableEntry.findMany({
     where: { departmentId, year: yearNum, section, isActive: true },
@@ -410,8 +424,9 @@ export const getFeedbackClassReport = asyncHandler(async (req: Request, res: Res
 });
 
 export const getFeedbackFacultyList = asyncHandler(async (req: Request, res: Response) => {
-  const { year, section } = req.query as Record<string, string>;
+  const { year, section, academicYear } = req.query as Record<string, string>;
   const departmentId = scopedDepartmentId(req, req.query.departmentId as string | undefined)!;
+  await assertPublishedForBranch(req, departmentId, Number(year), section, academicYear);
 
   const pairs = await prisma.timetableEntry.findMany({
     where: { departmentId, year: Number(year), section, isActive: true },
@@ -440,6 +455,7 @@ export const getFeedbackFacultyList = asyncHandler(async (req: Request, res: Res
 export const getFeedbackFacultyDetail = asyncHandler(async (req: Request, res: Response) => {
   const { year, section, academicYear, facultyId, subjectId } = req.query as Record<string, string>;
   const departmentId = scopedDepartmentId(req, req.query.departmentId as string | undefined)!;
+  await assertPublishedForBranch(req, departmentId, Number(year), section, academicYear);
   const detail = await buildFeedbackDetail({ facultyId, subjectId, departmentId, year: Number(year), section, academicYear });
   res.json({ success: true, data: detail });
 });
