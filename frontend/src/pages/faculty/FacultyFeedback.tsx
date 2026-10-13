@@ -87,7 +87,7 @@ export default function FacultyFeedbackPage() {
         <ReportPreview
           open={!!active}
           onClose={() => setActive(null)}
-          reportTitle={`Feedback Analysis Report : ${active.departmentCode}-${active.section} ${active.year} Sem`}
+          reportTitle={`Feedback Analysis Report : ${active.departmentCode}-${active.section} Year ${active.year}`}
           titleBadge={active.academicYear}
           generatedBy={getDisplayName(user)}
           onDownload={handleDownload}

@@ -526,7 +526,7 @@ export function FacultyFeedback() {
         <ReportPreview
           open={!!detail}
           onClose={() => setDetail(null)}
-          reportTitle={`Feedback Analysis Report : ${detail.departmentCode}-${detail.section} ${detail.year} Sem`}
+          reportTitle={`Feedback Analysis Report : ${detail.departmentCode}-${detail.section} Year ${detail.year}`}
           titleBadge={detail.academicYear}
           generatedBy={getDisplayName(user)}
           onDownload={downloadDetail}

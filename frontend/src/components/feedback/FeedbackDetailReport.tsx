@@ -11,7 +11,7 @@ export function FeedbackDetailReport({ detail }: { detail: FeedbackFacultyDetail
     <div className="space-y-5">
       <div className="rounded-2xl border border-brand-100 bg-gradient-to-br from-brand-950 to-brand-900 px-6 py-5 text-center text-white">
         <p className="text-xs font-semibold uppercase tracking-wider text-gold-300">
-          Feedback Analysis Report : {detail.departmentCode}-{detail.section} {detail.year} Sem
+          Feedback Analysis Report : {detail.departmentCode}-{detail.section} Year {detail.year}
         </p>
         <p className="mt-1.5 font-serif text-lg font-bold">
           {detail.subjectName} - {detail.facultyName}

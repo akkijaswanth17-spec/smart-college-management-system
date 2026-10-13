@@ -298,7 +298,7 @@ export async function generateFacultyFeedbackReportPdf(data: FeedbackFacultyDeta
   const pdf = new jsPDF({ unit: "pt", format: "a4" });
   const startY = await addHeader(
     pdf,
-    `Feedback Analysis Report : ${data.departmentCode}-${data.section} ${data.year} Sem`,
+    `Feedback Analysis Report : ${data.departmentCode}-${data.section} Year ${data.year}`,
     data.academicYear
   );
 
